@@ -1,0 +1,131 @@
+"""Untrained multi-answer predictors built from E01 readouts (see experiments/E01-readout-baselines).
+
+Each predictor turns one readout record into a predicted set and, where it defines one, a full distribution over
+sets (for the log-loss). Predictors that need tuning fit on a dev split of the same dataset only.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+from .setdist import SetDistribution, logit
+
+
+@dataclass
+class Prediction:
+    subset: set
+    dist: SetDistribution | None = None
+
+
+class Predictor:
+    name = "base"
+    needs: tuple[str, ...] = ()
+
+    def available(self, rec: dict) -> bool:
+        return "error" not in rec and all(f in rec for f in self.needs)
+
+    def fit(self, dev: list[dict]) -> "Predictor":
+        return self
+
+    def predict(self, rec: dict) -> Prediction:
+        raise NotImplementedError
+
+
+def fit_platt(x: np.ndarray, y: np.ndarray, iters: int = 50, ridge: float = 1e-3) -> tuple[float, float]:
+    """Fit P(y=1) = sigmoid(a*x + b) by damped Newton. Returns (a, b); (1, 0) leaves probabilities unchanged."""
+    X = np.stack([x, np.ones_like(x)], axis=1)
+    theta = np.array([1.0, 0.0])
+    prior = theta.copy()
+
+    def loss(t):
+        z = X @ t
+        return float(np.sum(np.logaddexp(0.0, z) - y * z) + 0.5 * ridge * np.sum((t - prior) ** 2))
+
+    cur = loss(theta)
+    for _ in range(iters):
+        p = 1 / (1 + np.exp(-np.clip(X @ theta, -500, 500)))
+        g = X.T @ (p - y) + ridge * (theta - prior)
+        H = (X * (p * (1 - p))[:, None]).T @ X + ridge * np.eye(2)
+        step = np.linalg.solve(H, g)
+        t = 1.0
+        while t > 1e-6 and loss(theta - t * step) > cur:  # backtrack: plain Newton overshoots from a far start
+            t /= 2
+        theta = theta - t * step
+        new = loss(theta)
+        if abs(cur - new) < 1e-10 * max(1.0, abs(cur)):
+            break
+        cur = new
+    return float(theta[0]), float(theta[1])
+
+
+class Independent(Predictor):
+    """One yes/no per option, each kept if its probability is above 0.5 (the mode of the independent product).
+    calibrate=True first refits the probabilities on the dev split (Platt scaling: two numbers per dataset)."""
+
+    def __init__(self, field: str = "noul", calibrate: bool = False):
+        self.field, self.calibrate, self.needs = field, calibrate, (field,)
+        self.name = f"{field}+platt" if calibrate else f"{field}@0.5"
+        self.ab = (1.0, 0.0)
+
+    def fit(self, dev):
+        if self.calibrate:
+            xs, ys = [], []
+            for r in dev:
+                if self.available(r):
+                    xs.extend(logit(r[self.field])); ys.extend(j in set(r["gold"]) for j in range(r["k"]))
+            if xs:
+                self.ab = fit_platt(np.asarray(xs), np.asarray(ys, dtype=float))
+        return self
+
+    def predict(self, rec):
+        a, b = self.ab
+        dist = SetDistribution(a * logit(rec[self.field]) + b)
+        return Prediction(set(dist.mode()), dist)
+
+
+class ChoiceTop1(Predictor):
+    """Today's single-answer Choice: always exactly one option."""
+    name, needs = "pick@top1", ("pick",)
+
+    def predict(self, rec):
+        return Prediction({int(np.argmax(rec["pick"]))})
+
+
+class ChoiceOracleCount(Predictor):
+    """Upper bound for the count approach: the Choice ranking, told the true number of answers."""
+    name, needs = "pick+true_count", ("pick",)
+
+    def predict(self, rec):
+        s = len(rec["gold"])
+        return Prediction(set(int(i) for i in np.argsort(-np.asarray(rec["pick"]), kind="stable")[:s]))
+
+
+class ScoresPlusCount(Predictor):
+    """The count approach without training: option scores from `field` plus the model's own answer to
+    "how many apply?". field="pick" uses Choice probabilities; "noul"/"noul_ctx" use per-option yes/no logits
+    (i.e. independent yes/no with its implied count replaced by the asked count)."""
+
+    def __init__(self, field: str = "pick"):
+        self.field, self.needs, self.name = field, (field, "count"), f"{field}+count"
+
+    def predict(self, rec):
+        if self.field == "pick":
+            dist = SetDistribution.from_scores(rec["pick"], rec["count"])
+        else:
+            dist = SetDistribution.from_logits_and_count(logit(rec[self.field]), rec["count"])
+        return Prediction(set(dist.mode()), dist)
+
+
+def default_predictors() -> list[Predictor]:
+    return [
+        Independent("noul"),
+        Independent("noul", calibrate=True),
+        Independent("noul_ctx"),
+        Independent("noul_ctx", calibrate=True),
+        ChoiceTop1(),
+        ChoiceOracleCount(),
+        ScoresPlusCount("pick"),
+        ScoresPlusCount("noul"),
+        ScoresPlusCount("noul_ctx"),
+    ]

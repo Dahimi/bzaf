@@ -1,0 +1,41 @@
+# Decision log
+
+Short records of decisions and why. Add a new entry rather than editing an old one; mark superseded entries.
+
+## D1 — Focus on the multi-answer question type (2026-10-03)
+The deliverable is an open decision model with a native multi-answer question type, plus a report. Dependence between
+different questions in one request (linked groups) is out of scope until evidence asks for it.
+*Why:* it is the common, concrete use case, and the cross-question problem is smaller on average than the anecdotes
+suggest (mean complement violation 0.064) and has cheap workarounds.
+
+## D2 — Primary method: per-option scores plus a count head (2026-10-03)
+One extra linear head predicts how many options apply; combined with the existing per-option scores it gives a full
+answer-set distribution. Main ablation: count head off (one sigmoid per option, direction 2). Escalation: chain head,
+only if residual dependence is shown.
+*Why:* it reduces exactly to Choice at count 1, adds ~40k parameters and no extra pass, and targets the documented
+failure (wrong number of answers). See [approach.md](approach.md).
+
+## D3 — Base model chosen by measurement, Kev as fallback (2026-10-03)
+Candidates: Kev-4B, Imajev-4B, Decision 2.0 Nox-4B (after lineage check), JevK5-4B as a reference only. Chosen in E01
+by multi-answer baseline quality, then single-answer strength, licence and lineage of the weights, and how easily a
+head can be attached and trained.
+*Why:* published scores are on different benchmarks and not comparable; the head is backbone-agnostic.
+
+## D4 — No Jev outputs, no live Jev baseline (2026-10-03)
+Never train on Jev outputs; never call Jev's API in experiments; cite published third-party Jev numbers only.
+The same rule applies to any teacher whose terms forbid training on its outputs (affects JevK5/Plumb lineage).
+
+## D5 — Local first, cloud for 4B+ training (2026-10-03)
+Develop, evaluate and train 0.8B on the MacBook (M3, 18 GB). Move 4B/9B training to rented GPUs as soon as E02 shows
+signal, rather than spending days of laptop time. (Kev's README puts a Kev-4B fine-tuning run at about $1 on an
+H100.)
+
+## D6 — Metrics (2026-10-03)
+Primary: log-loss of the gold answer set (proper, and directly measures what set modelling buys) and exact-set
+accuracy. Secondary: example and micro F1, count accuracy, stability under option shuffling, no regression on
+single-answer Choice. Bootstrap CIs on everything; paired differences for comparisons.
+
+## D7 — Data (2026-10-03)
+Public multi-label datasets with natural-language label names, plus programmatic synthetic data (exact gold, any
+count including none, built-in dependence). Held-out evaluation datasets are never trained on. LLM-generated data only
+from teachers whose licence allows training use.

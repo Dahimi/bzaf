@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+
+# Data and run outputs (regenerate with `bzaf prepare` / `bzaf readout`; commit only summaries)
+data/
+runs/
+
+# Model weights
+*.safetensors
+*.bin
+*.gguf
+checkpoints/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
