@@ -3,7 +3,7 @@
 Most sentences have no label, so this tests "none of these" as much as multi-answer. Published reference: Jev's
 per-label yes/no reaches micro-F1 0.50 at a 0.5 threshold and 0.75 with tuned thresholds (arXiv 2609.37647).
 
-Needs the Hugging Face `datasets` package (pip install -e ".[data]"). Not reachable from the cloud sandbox this
+Needs the Hugging Face `datasets` package (`uv sync --extra data`). Not reachable from the cloud sandbox this
 loader was written in, so check the first run by hand.
 """
 from __future__ import annotations

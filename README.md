@@ -36,11 +36,12 @@ options apply; together they define an exact distribution over answer sets
 
 ## Quickstart
 
+Needs [uv](https://docs.astral.sh/uv/) (`brew install uv` on macOS).
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,data]"
-pytest                                   # maths checked against brute-force enumeration
-bzaf prepare synthetic --limit 300       # -> data/items/synthetic.jsonl
+uv sync --extra data                         # creates .venv from uv.lock (Python 3.12, dev tools included)
+uv run pytest                                # maths checked against brute-force enumeration
+uv run bzaf prepare synthetic --limit 300    # -> data/items/synthetic.jsonl
 ```
 
 The full week-1 recipe (start a model server, read out, score) is in
@@ -78,6 +79,8 @@ data/, runs/          generated, not committed
 - No TypeSafe Jev outputs are used for training, and Jev is never called in experiments (see the brief).
 - Every experiment is written down before it runs, with the result that would change the plan.
 - Raw outputs stay in `runs/`; commit summaries (`experiments/*/results/*.md`) and decisions.
+- Tooling is uv: add dependencies with `uv add` (or `uv add --dev`) and commit `uv.lock`.
+- Day-to-day changes go straight to `main`; anything risky or experimental gets its own branch.
 
 ## License
 

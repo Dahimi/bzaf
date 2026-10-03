@@ -3,12 +3,14 @@ name = "bzaf"
 version = "0.0.1"
 description = "A one-pass multi-answer question type for open decision models"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
-data = ["datasets>=2.18"]   # only for UNFAIR-ToS (Hugging Face)
-dev = ["pytest>=8", "ruff>=0.5"]
+data = ["datasets>=2.18"]   # only for UNFAIR-ToS (Hugging Face): uv sync --extra data
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.5"]   # installed by default with `uv sync`
 
 [project.scripts]
 bzaf = "bzaf.cli:main"

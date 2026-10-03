@@ -50,20 +50,20 @@ item-id hash, fitting on dev only:
 ## Commands
 
 ```bash
-pip install -e ".[dev,data]"           # or: uv pip install -e ".[dev,data]"
-bzaf prepare sata --limit 400
-bzaf prepare goemotions --limit 400
-bzaf prepare unfair_tos --limit 800
-bzaf prepare synthetic --limit 300
+uv sync --extra data
+uv run bzaf prepare sata --limit 400
+uv run bzaf prepare goemotions --limit 400
+uv run bzaf prepare unfair_tos --limit 800
+uv run bzaf prepare synthetic --limit 300
 
 # pilot: 20 items, check the server speaks the format and measure latency
-bzaf readout --items data/items/sata.jsonl --base-url http://localhost:8009 --model kev-4b --out runs/e01/kev-4b/sata.jsonl --limit 20
+uv run bzaf readout --items data/items/sata.jsonl --base-url http://localhost:8009 --model kev-4b --out runs/e01/kev-4b/sata.jsonl --limit 20
 
 # full run per model and dataset (resumable: re-run the same command after an interruption)
 for d in sata goemotions unfair_tos synthetic; do
-  bzaf readout --items data/items/$d.jsonl --base-url http://localhost:8009 --model kev-4b --out runs/e01/kev-4b/$d.jsonl
+  uv run bzaf readout --items data/items/$d.jsonl --base-url http://localhost:8009 --model kev-4b --out runs/e01/kev-4b/$d.jsonl
 done
-bzaf score runs/e01/kev-4b/*.jsonl --out experiments/E01-readout-baselines/results/kev-4b
+uv run bzaf score runs/e01/kev-4b/*.jsonl --out experiments/E01-readout-baselines/results/kev-4b
 ```
 
 If a full run is too slow on the Mac, drop a variant (`--variants noul_ctx,pick,count`) before dropping items.
