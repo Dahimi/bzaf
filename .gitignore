@@ -9,14 +9,14 @@ dist/
 build/
 
 # Data and run outputs (regenerate with `bzaf prepare` / `bzaf readout`; commit only summaries)
-data/
-runs/
+/data/
+/runs/
 
 # Model weights
 *.safetensors
 *.bin
 *.gguf
-checkpoints/
+/checkpoints/
 
 # OS / editors
 .DS_Store
