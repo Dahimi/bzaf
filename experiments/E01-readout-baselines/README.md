@@ -45,6 +45,8 @@ item-id hash, fitting on dev only:
 | `noul+platt`, `noul_ctx+platt` | the same, recalibrated on dev (two numbers per dataset) |
 | `pick@top1` | today's Choice: always one answer |
 | `pick+true_count` | Choice ranking told the true number of answers (upper bound for the count approach) |
+| `noul+true_count`, `noul_ctx+true_count` | yes/no ranking told the true number (control: is Choice's ranking better, or is it all counting?) |
+| `always_none` | always answer "none" (reference: free exact-set accuracy when most items have no answer) |
 | `pick+count`, `noul+count`, `noul_ctx+count` | the count approach untrained: option scores + the model's own count answer |
 
 ## How to run (step by step, on the Mac)
@@ -123,11 +125,33 @@ If a full run is too slow, drop a variant (`--variants noul_ctx,pick,count`) bef
 - **Base model:** rank candidates by the mean, over the three real datasets, of exact-set accuracy of their best
   untrained multi-answer predictor. Candidates within each other's CIs are tied; break ties by lineage and licence,
   then by how easily a head can be attached and trained (Kev wins that last one).
-- **Signals recorded, not gates:** S2 (`pick+count` vs `pick+true_count`: how far the untrained count is from
+- **Signals recorded, not gates:** R1 (`pick+true_count` vs `noul_ctx+true_count`: does Choice rank better than
+  yes/no when both know the count); C1 (`pick+true_count` vs `pick@top1`: what the right count adds over one answer);
+  S2 (`pick+count` vs `pick+true_count`: how far the untrained count is from
   perfect, i.e. the headroom a trained count head must close); S3 (`noul_ctx+count` vs `noul_ctx@0.5`: the count
   dial on top of yes/no); S4 (`noul_ctx` vs `noul`: does listing the options help).
 
 ## Results
 
-*Not run yet.* Commit each model's `results/<model>.md` here, then write the conclusion and the G1 / base decision
-below, with a [decisions](../../docs/decisions.md) entry.
+Commit each model's `results/<model>.md` here, then write the conclusion and the G1 / base decision below, with a
+[decisions](../../docs/decisions.md) entry.
+
+### Interim notes — Kev-0.8B (2026-10-05, not the decision run)
+
+[results/kev-0.8b.md](results/kev-0.8b.md). Scored before the `noul*+true_count` and `always_none` controls existed;
+re-run `bzaf score` to add them (no model needed).
+
+1. **G1 passes on all four datasets** (+10 to +31 exact-set points, CIs well above 0), but it means different things:
+   SATA 13.7 → 45.0 and synthetic 67.3 → 81.0 are genuine "right count" wins; on GoEmotions the gain is mostly
+   Choice vs yes/no (top-1 alone already gets 30.3, the true count adds 1.5); on UNFAIR-ToS the oracle count leaks
+   "none" (88 % of items), so 98 % there is not informative.
+2. **Yes/no per option is badly miscalibrated at this size:** 9.8 labels predicted for 1.2 true on GoEmotions,
+   4.4 for 0.13 on UNFAIR-ToS. Platt fixes the log-loss but then predicts nothing (an independent model cannot say
+   "at least one").
+3. **Asking "how many apply?" does not work untrained:** count accuracy 4–7 % on SATA, GoEmotions and synthetic
+   (synthetic: predicts 0.3 answers on average for 2.8 true). The count must be learned, which is what the count head
+   is for (headroom S2: −27 to −74 points).
+4. **Listing all options in the yes/no question helps** (S4: +10 synthetic, +27 UNFAIR-ToS, +4 SATA).
+5. Open: whether Choice ranks better than yes/no once both know the count (R1), and whether a 4B can count when
+   asked. Kev-4B is the decision run for G1 and the base choice.
+

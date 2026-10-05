@@ -92,13 +92,28 @@ class ChoiceTop1(Predictor):
         return Prediction({int(np.argmax(rec["pick"]))})
 
 
-class ChoiceOracleCount(Predictor):
-    """Upper bound for the count approach: the Choice ranking, told the true number of answers."""
-    name, needs = "pick+true_count", ("pick",)
+class OracleCount(Predictor):
+    """Rank options by `field` and keep as many as the true number of answers. With field="pick" this is the upper
+    bound for the count approach; with a yes/no field it is the control that tells whether Choice ranks better than
+    yes/no or whether the whole gap is counting."""
+
+    def __init__(self, field: str = "pick"):
+        self.field, self.needs, self.name = field, (field,), f"{field}+true_count"
 
     def predict(self, rec):
         s = len(rec["gold"])
-        return Prediction(set(int(i) for i in np.argsort(-np.asarray(rec["pick"]), kind="stable")[:s]))
+        return Prediction(set(int(i) for i in np.argsort(-np.asarray(rec[self.field]), kind="stable")[:s]))
+
+
+ChoiceOracleCount = OracleCount  # backwards-compatible name
+
+
+class AlwaysNone(Predictor):
+    """Reference: always answer "none of these". Shows how much exact-set accuracy an empty answer gets for free."""
+    name, needs = "always_none", ()
+
+    def predict(self, rec):
+        return Prediction(set())
 
 
 class ScoresPlusCount(Predictor):
@@ -123,8 +138,11 @@ def default_predictors() -> list[Predictor]:
         Independent("noul", calibrate=True),
         Independent("noul_ctx"),
         Independent("noul_ctx", calibrate=True),
+        AlwaysNone(),
         ChoiceTop1(),
-        ChoiceOracleCount(),
+        OracleCount("pick"),
+        OracleCount("noul"),
+        OracleCount("noul_ctx"),
         ScoresPlusCount("pick"),
         ScoresPlusCount("noul"),
         ScoresPlusCount("noul_ctx"),

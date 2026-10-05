@@ -1,8 +1,10 @@
+import json
+
 import numpy as np
 
 from bzaf.metrics import evaluate, set_f1
-from bzaf.predictors import ChoiceOracleCount, Independent, ScoresPlusCount, fit_platt
-from bzaf.score import format_report, score_records
+from bzaf.predictors import AlwaysNone, ChoiceOracleCount, Independent, OracleCount, ScoresPlusCount, fit_platt
+from bzaf.score import format_report, score_files, score_records
 
 
 def test_set_f1_and_evaluate():
@@ -35,6 +37,8 @@ def test_predictors_on_one_record():
     assert ChoiceOracleCount().predict(r).subset == {0, 2}
     assert ScoresPlusCount("pick").predict(r).subset == {0, 2}
     assert ScoresPlusCount("noul").predict(r).subset == {0, 2}
+    assert OracleCount("noul").predict(r).subset == {0, 2}
+    assert AlwaysNone().predict(r).subset == set()
 
 
 def test_score_records_end_to_end():
@@ -55,3 +59,11 @@ def test_score_records_end_to_end():
     assert "set_nll" in rows["noul@0.5"] and "set_nll" not in rows["pick+true_count"]
     text = format_report(report, "fake")
     assert "G1 ranking+true count vs best yes/no" in text
+
+
+def test_score_files_keeps_dotted_model_names(tmp_path):
+    rec = {"id": "d:0", "dataset": "d", "model": "kev-0.8b", "k": 2, "gold": [0], "noul": [0.9, 0.1], "pick": [0.8, 0.2], "count": [0.1, 0.8, 0.1]}
+    src = tmp_path / "r.jsonl"
+    src.write_text(json.dumps(rec) + "\n")
+    score_files([str(src)], out=str(tmp_path / "kev-0.8b"))
+    assert (tmp_path / "kev-0.8b.md").exists() and (tmp_path / "kev-0.8b.json").exists()

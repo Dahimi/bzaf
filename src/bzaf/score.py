@@ -62,6 +62,8 @@ def comparisons(rows: dict) -> dict:
             out[key] = {"a": a, "b": b, "metric": metric, "mean": mean * scale, "ci": (lo * scale, hi * scale)}
 
     diff("G1 ranking+true count vs best yes/no", "pick+true_count", best_noul)
+    diff("R1 Choice ranking vs yes/no ranking (both told the count)", "pick+true_count", "noul_ctx+true_count")
+    diff("C1 value of the right count over top-1", "pick+true_count", "pick@top1")
     diff("S2 asked count vs true count (headroom)", "pick+count", "pick+true_count")
     diff("S3 count dial on yes/no (ctx)", "noul_ctx+count", "noul_ctx@0.5")
     diff("S4 options in context (yes/no)", "noul_ctx@0.5", "noul@0.5")
@@ -98,6 +100,6 @@ def score_files(paths: list[str], dev_frac: float = 0.3, out: str | None = None)
         Path(out).parent.mkdir(parents=True, exist_ok=True)
         slim = {ds: {**r, "predictors": {k: {kk: vv for kk, vv in v.items() if not kk.startswith("per_item")} for k, v in r["predictors"].items()}}
                 for ds, r in report.items()}
-        Path(out).with_suffix(".json").write_text(json.dumps(slim, indent=2))
-        Path(out).with_suffix(".md").write_text(text)
+        Path(f"{out}.json").write_text(json.dumps(slim, indent=2))  # not with_suffix: "kev-0.8b" would become "kev-0.md"
+        Path(f"{out}.md").write_text(text)
     return text
