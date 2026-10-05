@@ -109,7 +109,17 @@ uv run bzaf score runs/e01/$M/*.jsonl --out experiments/E01-readout-baselines/re
 
 - **Kev-4B:** `--run jaredpalmer/kev-4b`. Loading briefly peaks near 16 GB on an 18 GB Mac (the adapter is merged
   into the base on load), so close other apps first. If it runs out of memory, tell Claude.
-- **Imajev-4B, Decision 2.0:** start their servers per their READMEs, on port 8009 or with `--base-url` changed.
+- **Imajev-4B** (in a clone of [mohit67890/imajev](https://github.com/mohit67890/imajev), Python 3.11, port 8765):
+  ```bash
+  uv venv -p 3.11 && source .venv/bin/activate && uv pip install -e ".[serve,mlx]"
+  python scripts/download_model.py --model 4b
+  hf download mohit67890/imajev-4b --local-dir adapters/imajev-4b
+  PYTHONPATH=src:scripts python scripts/playground/server.py --model-bundle artifacts/model-qwen4b.json \
+    --adapter adapters/imajev-4b/mlx --calibration adapters/imajev-4b/calibration.json --model-name imajev-4b --port 8765
+  ```
+  Then run steps 2–3 with `M=imajev-4b` and `--base-url http://localhost:8765`. One option order (the default
+  `--rotations 1`), like Kev, so the comparison is fair.
+- **Decision 2.0:** after the lineage check; start its server per its model card.
 
 **Step 5 — share.** Commit and push `experiments/E01-readout-baselines/results/*.md` (or paste them to Claude).
 Raw `runs/` stay local.
