@@ -152,6 +152,10 @@ re-run `bzaf score` to add them (no model needed).
    (synthetic: predicts 0.3 answers on average for 2.8 true). The count must be learned, which is what the count head
    is for (headroom S2: −27 to −74 points).
 4. **Listing all options in the yes/no question helps** (S4: +10 synthetic, +27 UNFAIR-ToS, +4 SATA).
-5. Open: whether Choice ranks better than yes/no once both know the count (R1), and whether a 4B can count when
-   asked. Kev-4B is the decision run for G1 and the base choice.
+5. **Re-scored with the ranking controls: the gap is the count, not the ranking.** Told the true count, the yes/no
+   ranking does about as well as Choice's: SATA 41.4 vs 45.0 (tie), UNFAIR-ToS 97.5 vs 98.2 (tie), synthetic 92.2 vs
+   81.0 (yes/no better), GoEmotions 19.5 vs 31.8 (Choice better). Yet yes/no thresholded at 0.5 gets 13.7 on SATA:
+   its ranking is fine, its implied count is what fails. So the count head should work on top of either kind of
+   per-option score, and E02 compares both (pointer/softmax scores vs per-option sigmoid scores, each with the count).
+6. Still open: whether a 4B can count when asked. Kev-4B is the decision run for G1 and the base choice.
 
