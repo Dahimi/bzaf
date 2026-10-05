@@ -47,26 +47,72 @@ item-id hash, fitting on dev only:
 | `pick+true_count` | Choice ranking told the true number of answers (upper bound for the count approach) |
 | `pick+count`, `noul+count`, `noul_ctx+count` | the count approach untrained: option scores + the model's own count answer |
 
-## Commands
+## How to run (step by step, on the Mac)
 
-```bash
-uv sync --extra data
-uv run bzaf prepare sata --limit 400
-uv run bzaf prepare goemotions --limit 400
-uv run bzaf prepare unfair_tos --limit 800
-uv run bzaf prepare synthetic --limit 300
+**How the pieces fit.** The model and our harness are two separate programs in two terminals. The model runs as a
+small local web server (its own repo, its own environment) and listens on a port, e.g. `localhost:8009`. `bzaf
+readout` sends it one HTTP request per item, the same format Jev's API uses, and writes the answers to `runs/`.
+Nothing is shared but that port. To test another model, stop one server and start the next.
 
-# pilot: 20 items, check the server speaks the format and measure latency
-uv run bzaf readout --items data/items/sata.jsonl --base-url http://localhost:8009 --model kev-4b --out runs/e01/kev-4b/sata.jsonl --limit 20
-
-# full run per model and dataset (resumable: re-run the same command after an interruption)
-for d in sata goemotions unfair_tos synthetic; do
-  uv run bzaf readout --items data/items/$d.jsonl --base-url http://localhost:8009 --model kev-4b --out runs/e01/kev-4b/$d.jsonl
-done
-uv run bzaf score runs/e01/kev-4b/*.jsonl --out experiments/E01-readout-baselines/results/kev-4b
+```
+Terminal 1 (~/code/kev)                         Terminal 2 (~/code/bzaf)
+python -m kev.serve --port 8009   <-- HTTP --   bzaf readout --base-url http://localhost:8009
+(model loaded in memory)                         -> runs/e01/<model>/<dataset>.jsonl
 ```
 
-If a full run is too slow on the Mac, drop a variant (`--variants noul_ctx,pick,count`) before dropping items.
+**Step 0 — prepare the data (once, Terminal 2).**
+
+```bash
+cd ~/code/bzaf && git pull && uv sync --extra data
+uv run bzaf prepare sata --limit 400
+uv run bzaf prepare goemotions --limit 400
+uv run bzaf prepare unfair_tos --limit 800      # downloads from Hugging Face
+uv run bzaf prepare synthetic --limit 300
+```
+
+**Step 1 — start the model server (Terminal 1).** Start with Kev-0.8B: it loads in seconds, needs about 4 GB and
+proves the whole pipeline before you spend hours on a 4B.
+
+```bash
+cd ~/code && git clone https://github.com/jaredpalmer/kev.git && cd kev   # once
+uv sync --extra serve                                                     # once; installs MLX on Apple Silicon
+uv run --extra serve python -m kev.serve --run jaredpalmer/kev-0.8b --port 8009
+```
+
+The first start downloads the weights from Hugging Face. Wait for the line that starts with `serving jaredpalmer/kev-0.8b`. Leave this
+terminal open. To check it from Terminal 2: `curl -s localhost:8009/v1/models | head -c 300`.
+
+**Step 2 — pilot (Terminal 2).** 20 items, to check the format and measure speed:
+
+```bash
+uv run bzaf readout --items data/items/sata.jsonl --base-url http://localhost:8009 --model kev-0.8b \
+  --out runs/e01/kev-0.8b/sata.jsonl --limit 20
+```
+
+It ends with `done: 20 ok, 0 failed, X s per item`. If anything failed, the first error is printed; send it to
+Claude, delete the output file, and re-run after the fix. Time estimate for the full run: X seconds × ~1,900 items.
+
+**Step 3 — full run (Terminal 2).** Re-running the same command continues where it stopped (the pilot's 20 items
+are skipped), so interruptions cost nothing. `caffeinate -i` keeps the Mac awake.
+
+```bash
+M=kev-0.8b
+for d in sata goemotions unfair_tos synthetic; do
+  caffeinate -i uv run bzaf readout --items data/items/$d.jsonl --base-url http://localhost:8009 --model $M --out runs/e01/$M/$d.jsonl
+done
+uv run bzaf score runs/e01/$M/*.jsonl --out experiments/E01-readout-baselines/results/$M
+```
+
+**Step 4 — next model.** Ctrl+C in Terminal 1, start the next one, set `M` to its name, repeat steps 2–3.
+
+- **Kev-4B:** `--run jaredpalmer/kev-4b`. Loading briefly peaks near 16 GB on an 18 GB Mac (the adapter is merged
+  into the base on load), so close other apps first. If it runs out of memory, tell Claude.
+- **Imajev-4B, Decision 2.0:** start their servers per their READMEs, on port 8009 or with `--base-url` changed.
+
+**Step 5 — share.** Commit and push `experiments/E01-readout-baselines/results/*.md` (or paste them to Claude).
+Raw `runs/` stay local.
+
+If a full run is too slow, drop a variant (`--variants noul_ctx,pick,count`) before dropping items.
 
 ## Pre-registered decision rules
 

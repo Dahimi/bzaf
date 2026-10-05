@@ -92,17 +92,24 @@ def run_readout(client: DecisionClient, items: list[Item], out: str | Path, vari
         done = {json.loads(line)["id"] for line in out.read_text(encoding="utf-8").splitlines() if line.strip()}
     todo = [it for it in items if it.id not in done]
     log(f"{len(done)} done, {len(todo)} to go -> {out}")
-    n = 0
+    n, errors, latencies = 0, [], []
     with out.open("a", encoding="utf-8") as f:
         for i, item in enumerate(todo, 1):
             try:
                 rec = read_item(client, item, variants, max_questions)
+                latencies.append(rec["latency_ms"])
             except Exception as e:  # keep going; failures are recorded and count as unanswered when scoring
                 rec = {"id": item.id, "dataset": item.dataset, "model": client.model, "k": len(item.options), "gold": item.gold,
                        "error": str(e)[:500]}
+                errors.append(rec["error"])
             f.write(json.dumps(rec) + "\n")
             f.flush()
             n += 1
             if i % 25 == 0 or i == len(todo):
                 log(f"  {i}/{len(todo)}")
+    if todo:
+        mean = sum(latencies) / len(latencies) if latencies else float("nan")
+        log(f"done: {len(latencies)} ok, {len(errors)} failed, {mean / 1000:.1f} s per item on average")
+        if errors:
+            log(f"first error: {errors[0]}")
     return n
