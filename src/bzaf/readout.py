@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -83,33 +84,57 @@ def read_item(client: DecisionClient, item: Item, variants: Iterable[str] = VARI
 
 
 def run_readout(client: DecisionClient, items: list[Item], out: str | Path, variants: Iterable[str] = VARIANTS,
-                max_questions: int = 64, log: Callable[[str], None] = print) -> int:
-    """Append one record per item to `out`, skipping items already there (safe to stop and resume)."""
+                max_questions: int = 64, concurrency: int = 1, log: Callable[[str], None] = print) -> int:
+    """Append one record per item to `out`, skipping items already answered (safe to stop and resume).
+
+    Items that failed on an earlier run are retried: their error records are dropped from `out` first. concurrency > 1
+    sends that many items at once; worth it against a GPU server that batches requests (Kev on CUDA batches up to 64),
+    not against Kev on a Mac, which runs one request at a time.
+    """
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    done = set()
+    done: set[str] = set()
     if out.exists():
-        done = {json.loads(line)["id"] for line in out.read_text(encoding="utf-8").splitlines() if line.strip()}
+        recs = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+        ok = [r for r in recs if "error" not in r]
+        if len(ok) < len(recs):  # rewrite without the failures, so a retry does not leave duplicates
+            out.write_text("".join(json.dumps(r) + "\n" for r in ok), encoding="utf-8")
+            log(f"retrying {len(recs) - len(ok)} items that failed before")
+        done = {r["id"] for r in ok}
     todo = [it for it in items if it.id not in done]
     log(f"{len(done)} done, {len(todo)} to go -> {out}")
+
+    def one(item: Item) -> dict:
+        try:
+            return read_item(client, item, variants, max_questions)
+        except Exception as e:  # keep going; failures are recorded and count as unanswered when scoring
+            return {"id": item.id, "dataset": item.dataset, "model": client.model, "k": len(item.options), "gold": item.gold,
+                    "error": str(e)[:500]}
+
     n, errors, latencies = 0, [], []
-    with out.open("a", encoding="utf-8") as f:
-        for i, item in enumerate(todo, 1):
-            try:
-                rec = read_item(client, item, variants, max_questions)
-                latencies.append(rec["latency_ms"])
-            except Exception as e:  # keep going; failures are recorded and count as unanswered when scoring
-                rec = {"id": item.id, "dataset": item.dataset, "model": client.model, "k": len(item.options), "gold": item.gold,
-                       "error": str(e)[:500]}
-                errors.append(rec["error"])
-            f.write(json.dumps(rec) + "\n")
-            f.flush()
-            n += 1
-            if i % 25 == 0 or i == len(todo):
-                log(f"  {i}/{len(todo)}")
+    t0 = time.perf_counter()
+    pool = ThreadPoolExecutor(max_workers=max(1, concurrency))
+    try:
+        with out.open("a", encoding="utf-8") as f:
+            for fut in as_completed([pool.submit(one, it) for it in todo]):  # written as they finish; order does not matter
+                rec = fut.result()
+                if "error" in rec:
+                    errors.append(rec["error"])
+                else:
+                    latencies.append(rec["latency_ms"])
+                f.write(json.dumps(rec) + "\n")
+                f.flush()
+                n += 1
+                if n % 25 == 0 or n == len(todo):
+                    log(f"  {n}/{len(todo)}")
+    except KeyboardInterrupt:  # stop at once: everything finished so far is on disk, the rest is retried next time
+        pool.shutdown(wait=False, cancel_futures=True)
+        raise
+    pool.shutdown()
     if todo:
-        mean = sum(latencies) / len(latencies) if latencies else float("nan")
-        log(f"done: {len(latencies)} ok, {len(errors)} failed, {mean / 1000:.1f} s per item on average")
+        wall = time.perf_counter() - t0
+        log(f"done: {len(latencies)} ok, {len(errors)} failed, {wall / len(todo):.2f} s per item wall clock "
+            f"(concurrency {concurrency})")
         if errors:
             log(f"first error: {errors[0]}")
     return n

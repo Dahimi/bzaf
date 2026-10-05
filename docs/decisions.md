@@ -39,3 +39,13 @@ single-answer Choice. Bootstrap CIs on everything; paired differences for compar
 Public multi-label datasets with natural-language label names, plus programmatic synthetic data (exact gold, any
 count including none, built-in dependence). Held-out evaluation datasets are never trained on. LLM-generated data only
 from teachers whose licence allows training use.
+
+## D8 — Cloud GPUs on Modal; data and metrics homes (2026-10-05)
+Model readouts and training run on Modal (serverless GPUs, per-second billing). The Mac is for development, tests and
+scoring. Data homes: code in git, our datasets in private Hugging Face dataset repos, weights cached on Modal volumes,
+training metrics in Weights & Biases (from E02). Details in [infrastructure.md](infrastructure.md). Supersedes D5's
+"train 0.8B on the Mac": the Kev-4B readout showed the 18 GB Mac is at its limit (≈16 GB load peak, one request at a
+time on Metal), while Kev on CUDA batches up to 64 requests.
+*Why Modal over RunPod:* our jobs are short and bursty (readouts, ~$1 training runs), so per-second billing with no idle
+or setup time outweighs RunPod's lower hourly rate; Kev already ships a Modal script. RunPod stays the option for long
+continuous jobs.

@@ -28,6 +28,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 150
 src = ["src", "tests"]
+extend-exclude = ["cloud/kev_serve.py"]   # vendored unchanged from Kev
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B"]

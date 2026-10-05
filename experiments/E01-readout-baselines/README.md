@@ -49,7 +49,12 @@ item-id hash, fitting on dev only:
 | `always_none` | always answer "none" (reference: free exact-set accuracy when most items have no answer) |
 | `pick+count`, `noul+count`, `noul_ctx+count` | the count approach untrained: option scores + the model's own count answer |
 
-## How to run (step by step, on the Mac)
+## How to run
+
+**On a cloud GPU (recommended for 4B and up):** [cloud/README.md](../../cloud/README.md). Same readout and score
+commands, pointed at a Modal endpoint, with `--concurrency`.
+
+### On the Mac (fine for 0.8B)
 
 **How the pieces fit.** The model and our harness are two separate programs in two terminals. The model runs as a
 small local web server (its own repo, its own environment) and listens on a port, e.g. `localhost:8009`. `bzaf

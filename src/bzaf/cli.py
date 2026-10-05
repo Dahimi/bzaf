@@ -26,6 +26,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--variants", default="noul,noul_ctx,pick,count")
     r.add_argument("--max-questions", type=int, default=64, help="questions per request (chunked above this)")
     r.add_argument("--limit", type=int, default=None)
+    r.add_argument("--concurrency", type=int, default=1, help="items in flight at once (use 8-32 against a GPU server, 1 on a Mac)")
+    r.add_argument("--timeout", type=float, default=300.0, help="seconds per request")
 
     s = sub.add_parser("score", help="score readout files and print the E01 tables")
     s.add_argument("readouts", nargs="+")
@@ -44,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
         from .readout import run_readout
 
         items = list(read_items(a.items))[: a.limit]
-        run_readout(DecisionClient(a.base_url, a.model), items, a.out, a.variants.split(","), a.max_questions)
+        run_readout(DecisionClient(a.base_url, a.model, timeout=a.timeout), items, a.out, a.variants.split(","), a.max_questions, a.concurrency)
     elif a.cmd == "score":
         from .score import score_files
 

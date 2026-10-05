@@ -32,6 +32,7 @@ options apply; together they define an exact distribution over answer sets
 | [Landscape](docs/landscape.md) | Jev, benchmarks, open models, prior art, where the gap is (dated snapshot) |
 | [Roadmap](docs/roadmap.md) | phases, gates, open items |
 | [Decision log](docs/decisions.md) | what we decided and why |
+| [Infrastructure](docs/infrastructure.md) | where things run (Mac vs Modal) and where data, weights and metrics live |
 | [Experiments](experiments/) | one pre-registered folder per experiment |
 
 ## Quickstart
@@ -45,7 +46,7 @@ uv run bzaf prepare synthetic --limit 300    # -> data/items/synthetic.jsonl
 ```
 
 The full week-1 recipe (start a model server, read out, score) is in
-[experiments/E01-readout-baselines](experiments/E01-readout-baselines/).
+[experiments/E01-readout-baselines](experiments/E01-readout-baselines/); for cloud GPUs see [cloud/](cloud/).
 
 ```python
 from bzaf import SetDistribution
@@ -62,6 +63,7 @@ d.restrict_count(0, 1).mode() # with an "at most one" constraint
 ```
 docs/                 project documentation (start with the brief)
 experiments/          one folder per experiment: pre-registration, then results
+cloud/                Modal apps for model endpoints (Kev, Imajev) and the cloud runbook
 src/bzaf/
   setdist.py          answer-set distributions (count x scores), exact in log space
   readout.py          ask a decision server with existing question types (E01)

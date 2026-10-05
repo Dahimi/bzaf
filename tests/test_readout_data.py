@@ -56,10 +56,38 @@ def test_run_readout_chunks_and_resumes(tmp_path):
     out = tmp_path / "r.jsonl"
     run_readout(FakeClient(gold_by_state, seen), items[:6], out, max_questions=7, log=lambda _: None)
     run_readout(FakeClient(gold_by_state, seen), items, out, max_questions=7, log=lambda _: None)
-    recs = [json.loads(line) for line in out.read_text().splitlines()]
+    recs = {r["id"]: r for r in map(json.loads, out.read_text().splitlines())}
     assert len(recs) == 12 and max(seen) <= 7
-    for r, it in zip(recs, items):
+    for it in items:
+        r = recs[it.id]
         assert r["gold"] == it.gold
         assert len(r["noul"]) == len(r["noul_ctx"]) == len(r["pick"]) == r["k"]
         assert len(r["count"]) == r["k"] + 1
         assert {j for j, p in enumerate(r["noul"]) if p > 0.5} == set(it.gold)
+
+
+class FlakyClient(FakeClient):
+    """Fails every item once, then answers normally."""
+
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.failed = set()
+
+    def decide(self, state, questions):
+        key = json.dumps(state, sort_keys=True)
+        if key not in self.failed:
+            self.failed.add(key)
+            raise RuntimeError("cold start")
+        return super().decide(state, questions)
+
+
+def test_failed_items_are_retried_without_duplicates(tmp_path):
+    items = load_synthetic(n=10, seed=7)
+    gold_by_state = {json.dumps(it.state, sort_keys=True): {it.options[g] for g in it.gold} for it in items}
+    client, out = FlakyClient(gold_by_state, []), tmp_path / "r.jsonl"
+    run_readout(client, items, out, concurrency=4, log=lambda _: None)
+    assert all("error" in json.loads(line) for line in out.read_text().splitlines())
+    run_readout(client, items, out, concurrency=4, log=lambda _: None)
+    recs = [json.loads(line) for line in out.read_text().splitlines()]
+    assert len(recs) == 10 and not any("error" in r for r in recs)
+    assert {r["id"] for r in recs} == {it.id for it in items}
