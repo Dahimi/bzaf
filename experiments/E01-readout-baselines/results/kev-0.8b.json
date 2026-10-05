@@ -79,6 +79,19 @@
           4.722073719164671
         ]
       },
+      "always_none": {
+        "n": 267,
+        "exact": 0.0,
+        "example_f1": 0.0,
+        "micro_f1": 0.0,
+        "count_acc": 0.0,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 1.1797752808988764,
+        "exact_ci": [
+          0.0,
+          0.0
+        ]
+      },
       "pick@top1": {
         "n": 267,
         "exact": 0.30337078651685395,
@@ -103,6 +116,32 @@
         "exact_ci": [
           0.26217228464419473,
           0.37453183520599254
+        ]
+      },
+      "noul+true_count": {
+        "n": 267,
+        "exact": 0.20224719101123595,
+        "example_f1": 0.2440699126092384,
+        "micro_f1": 0.2507936507936508,
+        "count_acc": 1.0,
+        "mean_pred_size": 1.1797752808988764,
+        "mean_gold_size": 1.1797752808988764,
+        "exact_ci": [
+          0.15730337078651685,
+          0.250936329588015
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 267,
+        "exact": 0.1947565543071161,
+        "example_f1": 0.23283395755305863,
+        "micro_f1": 0.24126984126984127,
+        "count_acc": 1.0,
+        "mean_pred_size": 1.1797752808988764,
+        "mean_gold_size": 1.1797752808988764,
+        "exact_ci": [
+          0.149812734082397,
+          0.24344569288389514
         ]
       },
       "pick+count": {
@@ -172,6 +211,26 @@
         "ci": [
           25.468164794007492,
           36.71348314606737
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": 12.359550561797752,
+        "ci": [
+          6.367041198501873,
+          17.97752808988764
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 1.4981273408239701,
+        "ci": [
+          0.37453183520599254,
+          2.9962546816479403
         ]
       },
       "S2 asked count vs true count (headroom)": {
@@ -296,6 +355,19 @@
           5.151109370531303
         ]
       },
+      "always_none": {
+        "n": 278,
+        "exact": 0.0,
+        "example_f1": 0.0,
+        "micro_f1": 0.0,
+        "count_acc": 0.0,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 3.58273381294964,
+        "exact_ci": [
+          0.0,
+          0.0
+        ]
+      },
       "pick@top1": {
         "n": 278,
         "exact": 0.0,
@@ -320,6 +392,32 @@
         "exact_ci": [
           0.38848920863309355,
           0.5071942446043165
+        ]
+      },
+      "noul+true_count": {
+        "n": 278,
+        "exact": 0.38489208633093525,
+        "example_f1": 0.7355758250542422,
+        "micro_f1": 0.7329317269076305,
+        "count_acc": 1.0,
+        "mean_pred_size": 3.58273381294964,
+        "mean_gold_size": 3.58273381294964,
+        "exact_ci": [
+          0.3273381294964029,
+          0.44244604316546765
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 278,
+        "exact": 0.4136690647482014,
+        "example_f1": 0.7449754482128582,
+        "micro_f1": 0.748995983935743,
+        "count_acc": 1.0,
+        "mean_pred_size": 3.58273381294964,
+        "mean_gold_size": 3.58273381294964,
+        "exact_ci": [
+          0.3597122302158273,
+          0.4712230215827338
         ]
       },
       "pick+count": {
@@ -389,6 +487,26 @@
         "ci": [
           23.741007194244602,
           35.61151079136691
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": 3.597122302158273,
+        "ci": [
+          -2.158273381294964,
+          8.633093525179856
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 44.96402877697842,
+        "ci": [
+          38.84892086330935,
+          50.719424460431654
         ]
       },
       "S2 asked count vs true count (headroom)": {
@@ -513,6 +631,19 @@
           1.213958668712882
         ]
       },
+      "always_none": {
+        "n": 205,
+        "exact": 0.04390243902439024,
+        "example_f1": 0.04390243902439024,
+        "micro_f1": 0.0,
+        "count_acc": 0.04390243902439024,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 2.790243902439024,
+        "exact_ci": [
+          0.01951219512195122,
+          0.07317073170731707
+        ]
+      },
       "pick@top1": {
         "n": 205,
         "exact": 0.17560975609756097,
@@ -537,6 +668,32 @@
         "exact_ci": [
           0.7560975609756098,
           0.8634146341463415
+        ]
+      },
+      "noul+true_count": {
+        "n": 205,
+        "exact": 0.8926829268292683,
+        "example_f1": 0.9616608594657375,
+        "micro_f1": 0.9615384615384616,
+        "count_acc": 1.0,
+        "mean_pred_size": 2.790243902439024,
+        "mean_gold_size": 2.790243902439024,
+        "exact_ci": [
+          0.848780487804878,
+          0.9317073170731708
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 205,
+        "exact": 0.9219512195121952,
+        "example_f1": 0.9767828106852497,
+        "micro_f1": 0.972027972027972,
+        "count_acc": 1.0,
+        "mean_pred_size": 2.790243902439024,
+        "mean_gold_size": 2.790243902439024,
+        "exact_ci": [
+          0.8829268292682927,
+          0.9560975609756097
         ]
       },
       "pick+count": {
@@ -606,6 +763,26 @@
         "ci": [
           6.829268292682928,
           20.48780487804878
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": -11.219512195121952,
+        "ci": [
+          -16.585365853658537,
+          -6.341463414634147
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 63.41463414634146,
+        "ci": [
+          56.58536585365853,
+          69.7560975609756
         ]
       },
       "S2 asked count vs true count (headroom)": {
@@ -730,6 +907,19 @@
           0.44332511819618253
         ]
       },
+      "always_none": {
+        "n": 566,
+        "exact": 0.8816254416961131,
+        "example_f1": 0.8816254416961131,
+        "micro_f1": 0.0,
+        "count_acc": 0.8816254416961131,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 0.127208480565371,
+        "exact_ci": [
+          0.8551236749116607,
+          0.9081272084805654
+        ]
+      },
       "pick@top1": {
         "n": 566,
         "exact": 0.09540636042402827,
@@ -754,6 +944,32 @@
         "exact_ci": [
           0.9717314487632509,
           0.9929328621908127
+        ]
+      },
+      "noul+true_count": {
+        "n": 566,
+        "exact": 0.9681978798586572,
+        "example_f1": 0.9708480565371025,
+        "micro_f1": 0.7361111111111112,
+        "count_acc": 1.0,
+        "mean_pred_size": 0.127208480565371,
+        "mean_gold_size": 0.127208480565371,
+        "exact_ci": [
+          0.9540636042402827,
+          0.9823321554770318
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 566,
+        "exact": 0.9752650176678446,
+        "example_f1": 0.9779151943462897,
+        "micro_f1": 0.8055555555555556,
+        "count_acc": 1.0,
+        "mean_pred_size": 0.127208480565371,
+        "mean_gold_size": 0.127208480565371,
+        "exact_ci": [
+          0.9611307420494699,
+          0.9876325088339223
         ]
       },
       "pick+count": {
@@ -823,6 +1039,26 @@
         "ci": [
           7.773851590106007,
           12.897526501766784
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": 0.7067137809187279,
+        "ci": [
+          -0.17667844522968199,
+          1.76678445229682
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 88.69257950530034,
+        "ci": [
+          86.04240282685512,
+          91.16607773851591
         ]
       },
       "S2 asked count vs true count (headroom)": {

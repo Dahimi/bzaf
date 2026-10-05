@@ -8,8 +8,11 @@
 | noul+platt | 0.0 [0.0, 0.0] | 0.000 | 0.000 | 0.000 | 0.00 (1.18) | 4.470 |
 | noul_ctx@0.5 | 0.7 [0.0, 1.9] | 0.129 | 0.134 | 0.060 | 10.80 (1.18) | 19.490 |
 | noul_ctx+platt | 0.0 [0.0, 0.0] | 0.000 | 0.000 | 0.000 | 0.00 (1.18) | 4.541 |
+| always_none | 0.0 [0.0, 0.0] | 0.000 | 0.000 | 0.000 | 0.00 (1.18) | — |
 | pick@top1 | 30.3 [24.7, 36.0] | 0.355 | 0.351 | 0.828 | 1.00 (1.18) | — |
 | pick+true_count | 31.8 [26.2, 37.5] | 0.365 | 0.362 | 1.000 | 1.18 (1.18) | — |
+| noul+true_count | 20.2 [15.7, 25.1] | 0.244 | 0.251 | 1.000 | 1.18 (1.18) | — |
+| noul_ctx+true_count | 19.5 [15.0, 24.3] | 0.233 | 0.241 | 1.000 | 1.18 (1.18) | — |
 | pick+count | 4.9 [2.2, 7.9] | 0.063 | 0.092 | 0.060 | 3.63 (1.18) | 5.480 |
 | noul+count | 0.7 [0.0, 1.9] | 0.020 | 0.072 | 0.007 | 4.20 (1.18) | 6.045 |
 | noul_ctx+count | 0.4 [0.0, 1.1] | 0.017 | 0.072 | 0.004 | 4.41 (1.18) | 6.001 |
@@ -17,6 +20,8 @@
 | signal | a − b | mean [95% CI] |
 |---|---|---|
 | G1 ranking+true count vs best yes/no | pick+true_count − noul_ctx@0.5 | +31.09 pts [+25.47, +36.71] |
+| R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +12.36 pts [+6.37, +17.98] |
+| C1 value of the right count over top-1 | pick+true_count − pick@top1 | +1.50 pts [+0.37, +3.00] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -26.97 pts [-32.58, -21.72] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | -0.37 pts [-1.87, +0.75] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | +0.37 pts [-0.75, +1.87] |
@@ -30,8 +35,11 @@
 | noul+platt | 15.1 [11.2, 19.4] | 0.594 | 0.636 | 0.245 | 2.85 (3.58) | 4.937 |
 | noul_ctx@0.5 | 13.7 [10.1, 18.0] | 0.654 | 0.674 | 0.205 | 3.97 (3.58) | 4.962 |
 | noul_ctx+platt | 13.3 [9.7, 17.6] | 0.607 | 0.657 | 0.201 | 3.02 (3.58) | 4.772 |
+| always_none | 0.0 [0.0, 0.0] | 0.000 | 0.000 | 0.000 | 0.00 (3.58) | — |
 | pick@top1 | 0.0 [0.0, 0.0] | 0.405 | 0.363 | 0.000 | 1.00 (3.58) | — |
 | pick+true_count | 45.0 [38.8, 50.7] | 0.750 | 0.760 | 1.000 | 3.58 (3.58) | — |
+| noul+true_count | 38.5 [32.7, 44.2] | 0.736 | 0.733 | 1.000 | 3.58 (3.58) | — |
+| noul_ctx+true_count | 41.4 [36.0, 47.1] | 0.745 | 0.749 | 1.000 | 3.58 (3.58) | — |
 | pick+count | 4.0 [1.8, 6.5] | 0.270 | 0.318 | 0.043 | 1.17 (3.58) | 4.941 |
 | noul+count | 0.7 [0.0, 1.8] | 0.190 | 0.275 | 0.007 | 1.34 (3.58) | 5.389 |
 | noul_ctx+count | 2.5 [0.7, 4.7] | 0.225 | 0.306 | 0.029 | 1.37 (3.58) | 5.203 |
@@ -39,6 +47,8 @@
 | signal | a − b | mean [95% CI] |
 |---|---|---|
 | G1 ranking+true count vs best yes/no | pick+true_count − noul+platt | +29.86 pts [+23.74, +35.61] |
+| R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +3.60 pts [-2.16, +8.63] |
+| C1 value of the right count over top-1 | pick+true_count − pick@top1 | +44.96 pts [+38.85, +50.72] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -41.01 pts [-46.76, -35.25] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | -11.15 pts [-15.47, -7.55] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | +3.60 pts [-0.36, +7.91] |
@@ -52,8 +62,11 @@
 | noul+platt | 57.1 [50.2, 63.9] | 0.893 | 0.908 | 0.600 | 2.67 (2.79) | 1.246 |
 | noul_ctx@0.5 | 67.3 [61.0, 74.1] | 0.905 | 0.928 | 0.688 | 2.72 (2.79) | 1.866 |
 | noul_ctx+platt | 66.3 [60.0, 72.7] | 0.904 | 0.927 | 0.673 | 2.76 (2.79) | 1.048 |
+| always_none | 4.4 [2.0, 7.3] | 0.044 | 0.000 | 0.044 | 0.00 (2.79) | — |
 | pick@top1 | 17.6 [12.2, 22.5] | 0.543 | 0.489 | 0.195 | 1.00 (2.79) | — |
 | pick+true_count | 81.0 [75.6, 86.3] | 0.931 | 0.932 | 1.000 | 2.79 (2.79) | — |
+| noul+true_count | 89.3 [84.9, 93.2] | 0.962 | 0.962 | 1.000 | 2.79 (2.79) | — |
+| noul_ctx+true_count | 92.2 [88.3, 95.6] | 0.977 | 0.972 | 1.000 | 2.79 (2.79) | — |
 | pick+count | 7.3 [3.9, 11.2] | 0.174 | 0.165 | 0.073 | 0.28 (2.79) | 3.429 |
 | noul+count | 11.2 [7.3, 15.6] | 0.255 | 0.266 | 0.112 | 0.43 (2.79) | 2.635 |
 | noul_ctx+count | 10.2 [6.3, 14.6] | 0.226 | 0.234 | 0.102 | 0.41 (2.79) | 2.739 |
@@ -61,6 +74,8 @@
 | signal | a − b | mean [95% CI] |
 |---|---|---|
 | G1 ranking+true count vs best yes/no | pick+true_count − noul_ctx@0.5 | +13.66 pts [+6.83, +20.49] |
+| R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | -11.22 pts [-16.59, -6.34] |
+| C1 value of the right count over top-1 | pick+true_count − pick@top1 | +63.41 pts [+56.59, +69.76] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -73.66 pts [-79.51, -67.32] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | -57.07 pts [-64.39, -49.74] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | +10.24 pts [+2.93, +17.56] |
@@ -74,8 +89,11 @@
 | noul+platt | 87.6 [85.0, 90.3] | 0.876 | 0.026 | 0.876 | 0.01 (0.13) | 0.525 |
 | noul_ctx@0.5 | 44.3 [40.1, 48.6] | 0.495 | 0.175 | 0.445 | 1.28 (0.13) | 3.485 |
 | noul_ctx+platt | 88.0 [85.3, 90.6] | 0.881 | 0.178 | 0.880 | 0.03 (0.13) | 0.366 |
+| always_none | 88.2 [85.5, 90.8] | 0.882 | 0.000 | 0.882 | 0.00 (0.13) | — |
 | pick@top1 | 9.5 [7.1, 12.0] | 0.100 | 0.182 | 0.110 | 1.00 (0.13) | — |
 | pick+true_count | 98.2 [97.2, 99.3] | 0.984 | 0.861 | 1.000 | 0.13 (0.13) | — |
+| noul+true_count | 96.8 [95.4, 98.2] | 0.971 | 0.736 | 1.000 | 0.13 (0.13) | — |
+| noul_ctx+true_count | 97.5 [96.1, 98.8] | 0.978 | 0.806 | 1.000 | 0.13 (0.13) | — |
 | pick+count | 85.2 [82.2, 88.0] | 0.855 | 0.466 | 0.852 | 0.16 (0.13) | 1.477 |
 | noul+count | 87.3 [84.6, 90.1] | 0.873 | 0.071 | 0.875 | 0.02 (0.13) | 1.601 |
 | noul_ctx+count | 85.7 [82.7, 88.5] | 0.858 | 0.377 | 0.859 | 0.12 (0.13) | 1.514 |
@@ -83,6 +101,8 @@
 | signal | a − b | mean [95% CI] |
 |---|---|---|
 | G1 ranking+true count vs best yes/no | pick+true_count − noul_ctx+platt | +10.25 pts [+7.77, +12.90] |
+| R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +0.71 pts [-0.18, +1.77] |
+| C1 value of the right count over top-1 | pick+true_count − pick@top1 | +88.69 pts [+86.04, +91.17] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -13.07 pts [-15.90, -10.25] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | +41.34 pts [+36.93, +45.94] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | +26.68 pts [+22.61, +30.74] |
