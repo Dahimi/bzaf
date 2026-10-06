@@ -16,4 +16,6 @@ Each `README.md` is written **before** the experiment runs and holds:
 |---|---|---|
 | [E01](E01-readout-baselines/) | How good are existing models at multi-answer, and does knowing the count help? Which base model? | done: G1 passed, base = Kev |
 | [E02](E02-count-head/) | Does a trained count head on Kev-0.8B beat the best untrained predictor on unseen datasets? | pre-registered |
-| E03 | 4B scale-up; count head vs no count head; is there residual dependence? | planned |
+| E01b | Which base do we release on (Kev-9B vs Decision 2.0 Lux-9B)? | planned |
+| E03 | 4B on the release base with data v1; count head vs sigmoid; data ablations | planned |
+| E04 | 9B release candidate with data v2 | planned |

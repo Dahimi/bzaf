@@ -1,36 +1,51 @@
 # Roadmap
 
-Each phase ends with a gate. A failed gate is a result, not a delay: it redirects the plan before money or weeks are
-spent. Experiments live in [`experiments/`](../experiments/), one folder each, pre-registered before they run.
+*Revised 2026-10-06 (D11–D15). Each phase ends with a gate. A failed gate is a result, not a delay: it redirects the
+plan before money or weeks are spent. Experiments live in [`experiments/`](../experiments/), one folder each,
+pre-registered before they run.*
 
-| Phase | When | Where | Experiment | Gate |
+| Phase | Work | Model | Gate | Budget envelope |
 |---|---|---|---|---|
-| 1. Readout baselines ✅ | week 1 | Mac, no training | [E01](../experiments/E01-readout-baselines/) | **G1:** ranking + true count beats the best yes/no predictor. Pick the base model. |
-| 2. Count head, small | weeks 2–3 | Mac, 0.8B | E02 | **G2:** trained count model beats the best E01 predictor on held-out datasets (set log-loss and exact-set) without hurting single-answer Choice. |
-| 3. Scale + ablation | week 4 | cloud, 4B (9B if useful) | E03 | **G3:** count head vs count head off (direction 2); residual dependence check decides on the chain head. |
-| 4. Release | weeks 5–6 | — | — | Weights, model card, report; submit to the Decision Index (SATA-Bench, ACOS). |
+| 1 ✅ | [E01](../experiments/E01-readout-baselines/) readout baselines | Kev 0.8B/4B, Imajev 4B | G1 passed: the count is the bottleneck | ~$5 (spent) |
+| 2 | [E02](../experiments/E02-count-head/) count head, stage-A-lite data, own trainer | Kev-0.8B (dev base) | **G2:** beats E01 baselines on held-out sets, no single-answer regression | ~$15 |
+| 2b (parallel) | E01b release-base comparison | Kev-9B vs Decision 2.0 Lux-9B (and their 4B) | Pre-registered rule picks the release base (D12) | ~$20 |
+| 3 | Data v1 (stages A–B) + E03 on the release base at 4B: count head vs sigmoid, data ablations, 200-option / 8k checks | 4B | **G3:** multi-answer gains on held-out families, no regression on general benchmarks | ~$60 (incl. first teacher labels) |
+| 4 | Data v2 (stages C–D) + E04: 9B release candidate, long-context training | 9B | **G4:** hard requirements met, no regression; submit to JevBench and the Decision Index | ~$150 |
+| 5 | Release: weights (9B + 4B), model card, paper, multi-answer benchmark track | — | — | reserve ~$50–100 |
 
-## Phase details
+Total ceiling about $300–400, released gate by gate (D15).
 
-**1. Readout baselines (E01).** Ask 3–4 candidate 4B decision models about SATA-Bench, UNFAIR-ToS, GoEmotions and
-synthetic items, using only the question types they support. Score untrained predictors offline. Outputs: the
-baseline table for the paper, the base-model choice, and the G1 decision.
-*If G1 fails* (knowing the count does not help), the count approach loses its justification: make direction 2 (one
-sigmoid per option, options in view) the primary model and keep the count head as the ablation.
+## What each phase answers
 
-**2. Count head on 0.8B (E02).** Implement the count head on the chosen base (Kev fallback), train locally on the
-data mix in [approach.md](approach.md), evaluate on held-out datasets (SATA-Bench, UNFAIR-ToS and one emotion and one
-topic dataset never trained on). *If G2 fails,* stop and diagnose before renting GPUs.
+**2. E02 — does the method work?** Count head on Kev's per-option scores, trained on a small mix, evaluated on
+datasets it never saw. Also the first version of our backbone-agnostic trainer (D11). If G2 fails: diagnose (data,
+head, loss) before spending more.
 
-**3. Scale and ablation (E03).** LoRA on the 4B in the cloud (a handful of GPU-hours per run). Main ablation: count
-head off. Residual-dependence check: fit pairwise terms on dev residuals; if they buy a clear gain on real data, the
-chain head comes back (see [alternatives.md](alternatives.md)).
+**2b. E01b — which base do we release on?** Inference only, plus one short LoRA run per candidate to measure
+forgetting. Measures: general decision quality through our harness on the same items for both (public JevBench items,
+the Decision Index subset Kev reports), multi-answer (E01 set), a probe at 200 options and 8k tokens. Rule written
+before it runs.
 
-**4. Release.** Apache-2.0 weights (subject to base licence), model card with lineage, the harness, results; Decision
-Index submission for an independent number.
+**3. E03 — does it hold at 4B with real data?** First full data pipeline (stages A–B, [data.md](data.md)). Main
+ablation: count head vs per-option sigmoid. Data ablations: what each stage adds. No-regression check on general
+benchmarks.
+
+**4. E04 — the release candidate.** 9B, stages C–D (mined hard cases, teacher labels), long-context training to meet
+the hard requirements. Independent numbers: submissions to JevBench and the Decision Index.
+
+**5. Release.** Weights with model cards (lineage, data licences, evaluation), the harness, the paper, and a proposal
+for a native multi-answer track to the benchmark maintainers.
+
+## Paper outline (what each phase feeds)
+
+1. Finding: the count is the bottleneck for multi-answer questions, on two model families (E01).
+2. Method: count-conditioned set head, exact and single-pass; ablation vs per-option sigmoid (E02, E03).
+3. Data recipe: staged data with ablations (E03, E04).
+4. Benchmark: multi-answer track with set calibration and wide (200 options) / long (8k) items.
+5. Models: 4B and 9B, general benchmarks matched, multi-answer leading at their size (E04).
 
 ## Open items
 
-- Your own 20–50 real multi-answer questions as an extra held-out set (most honest test).
-- Licence check for every training dataset before phase 2 (recorded in the model card).
-- Decision 2.0 lineage check before it is a candidate base.
+- Licence check for every training dataset and every teacher model before use (data.md register).
+- Decision 2.0 lineage: confirm whether a teacher model was used for its training data.
+- Which hosted provider(s) for teachers; confirm their terms allow training on outputs.

@@ -18,9 +18,10 @@ options apply; together they define an exact distribution over answer sets
 | Phase | State |
 |---|---|
 | 1. Readout baselines on existing models ([E01](experiments/E01-readout-baselines/)) | ✅ done: count is the bottleneck (G1 passed); base = Kev |
-| 2. Count head on Kev-0.8B ([E02](experiments/E02-count-head/)) | **next** |
-| 3. Scale to 4B in the cloud, ablation | planned |
-| 4. Release weights and report | planned |
+| 2. Count head on Kev-0.8B ([E02](experiments/E02-count-head/)) + release-base comparison (E01b) | **next** |
+| 3. Data v1 + E03 at 4B on the release base | planned |
+| 4. Data v2 + E04: 9B release candidate | planned |
+| 5. Release 9B + 4B, paper, benchmark track | planned |
 
 ## Documentation
 
@@ -30,7 +31,8 @@ options apply; together they define an exact distribution over answer sets
 | [Approach](docs/approach.md) | the count approach, the maths, why this design, training recipe, limits |
 | [Alternatives](docs/alternatives.md) | every approach considered, where each stands, and when parked ones come back |
 | [Landscape](docs/landscape.md) | Jev, benchmarks, open models, prior art, where the gap is (dated snapshot) |
-| [Roadmap](docs/roadmap.md) | phases, gates, open items |
+| [Roadmap](docs/roadmap.md) | phases, gates, budget envelopes, paper outline |
+| [Data plan](docs/data.md) | data stages, teachers, mixing, licence register |
 | [Decision log](docs/decisions.md) | what we decided and why |
 | [Infrastructure](docs/infrastructure.md) | where things run (Mac vs Modal) and where data, weights and metrics live |
 | [Experiments](experiments/) | one pre-registered folder per experiment |

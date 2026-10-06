@@ -10,7 +10,9 @@ probabilities for whole answer sets, not just for single options.
 
 Deliverables, in order:
 
-1. Open weights (Apache-2.0 if the base model allows) and inference code.
+1. Open weights (Apache-2.0 if the base model allows) and inference code: a **9B flagship and a 4B companion** that
+   match their base on general decision benchmarks (Choice, yes/no, Score) and lead on multi-answer at their size
+   (D11).
 2. A short paper or technical report: the method, and evidence of when it beats asking one yes/no question per
    option.
 3. The evaluation harness and multi-answer test suite, ideally contributed as a track to an existing benchmark
@@ -35,6 +37,11 @@ primitive worth having.
 **In:** the multi-answer question type: answer-set probabilities, per-option probabilities, a probability for the
 number of answers, "none", and count constraints (exactly / at most / at least k).
 
+**Hard requirements for the release model (D12):** up to **200 options** in one question and **8k tokens** of input.
+
+**Out of scope, follow-up project (D14):** query-based evidence / context selection (pick the relevant lines of a
+page for a query). It builds on this model, but it is a separate project and paper.
+
 **Out for now (parked, see [alternatives.md](alternatives.md)):** dependence between different questions in one
 request (linked question groups), chain heads, diffusion, conformal wrappers. They come back only if the evidence asks
 for them.
@@ -47,6 +54,6 @@ for them.
 - **Clean lineage for weights and data.** A base checkpoint must have a permissive licence and must not be distilled
   from a model whose terms forbid it. Synthetic data is generated programmatically or by a teacher whose licence
   allows training use (open-weight models are the safest).
-- **Compute:** a MacBook Pro M3 with 18 GB unified memory for development, evaluation and 0.8B training. Rented cloud
-  GPUs for 4B+ training once a result justifies it.
+- **Compute:** Modal GPUs for readouts and training (D8); the laptop for development. **Budget:** up to about
+  $300–400 of GPU and teacher-API spend, released in phase gates and only if results justify it (D15).
 - **One person, short iterations.** Every phase ends with a gate that can stop or redirect the project.

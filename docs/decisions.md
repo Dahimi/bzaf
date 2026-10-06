@@ -62,4 +62,38 @@ E01 base-model rule (mean best untrained predictor over SATA, UNFAIR-ToS, GoEmot
 (51.4 each). Tie broken on trainability, as pre-registered: Kev's pointer head takes the count head directly, its
 training code is documented, and its server batches on CUDA without request limits (Imajev: at most 8 questions per
 request, option names ≤ 128 characters). E02 develops the count head on Kev-0.8B; E03 scales to Kev-4B. Imajev
-remains a candidate second backbone for the paper.
+remains a candidate second backbone for the paper. *Amended by D11/D12: this is the development base only.*
+
+## D11 — Release target: 9B flagship + 4B companion, LoRA, own trainer (2026-10-06)
+Release a 9B model and a 4B companion; develop the method at 0.8B, run ablations at 4B. Train with LoRA (rank 32–64)
+plus fully trained heads; full fine-tuning is not needed at ≤ 9B (Kev did the same; it fully fine-tuned only at 27B).
+Write our own backbone-agnostic trainer so the release base stays swappable and the recipe is ours to publish.
+Goal on general benchmarks: match the base (no regression); improvements are a stretch goal.
+*Supersedes D10 in part:* Kev-0.8B is the **development** base for E02; the release base is decided by D12.
+
+## D12 — Release base chosen by E01b, with hard requirements (2026-10-06)
+Candidates at 9B: Kev-9B (open training code and data recipe, so replay is possible; validated to 8k) and Decision 2.0
+Lux-9B (stronger Decision Index score, 16k context; no public training code or data for the causal models as far as
+found). Imajev-9B is excluded by the hard requirements (8 questions per request, option names ≤ 128 characters).
+E01b compares them on general decision quality (same harness for both), multi-answer, a 200-option / 8k-token probe,
+and forgetting after a short LoRA run, with a rule written before it runs.
+Hard requirements for the release model: up to 200 options per question and 8k tokens of input.
+
+## D13 — Data: staged plan, hosted open-weight teachers (2026-10-06)
+Data stages: A breadth (public multi-answer and single-answer sets), B free augmentation, C mined hard cases,
+D teacher-labelled data; always dedup, contamination checks against every evaluation set, a licence register, and
+whole task families held out for zero-shot claims. Details in [data.md](data.md).
+Teachers run through hosted APIs for open-weight models (Together, Fireworks, DeepInfra, OpenRouter, ...), not
+self-hosted. Only models whose licence allows training on outputs (e.g. Apache-2.0 / MIT families), and only providers
+whose terms allow it; at least two families per labelled set, with agreement used as a soft target. Every generated
+row records the teacher model, provider and prompt version.
+
+## D14 — Evidence / context selection is a follow-up project (2026-10-06)
+Query-based selection of relevant lines from a page is a real need (RAG context pruning; Provence is the main prior
+art but non-commercial), but it is a separate project built on this model. Here it is neither a headline task nor an
+evaluation track. Public datasets with long documents and many options may still be used as generic training data,
+because the hard requirements (200 options, 8k tokens) need such data.
+
+## D15 — Budget released in phase gates (2026-10-06)
+Total ceiling about $300–400 (GPU + teacher APIs), committed phase by phase and only after the previous gate passes.
+Planned envelopes in [roadmap.md](roadmap.md). Each run logs its cost; overruns of more than 50 % stop and re-plan.
