@@ -22,3 +22,6 @@ build/
 .DS_Store
 .idea/
 .vscode/
+
+# Local secrets (API keys, tokens)
+.env

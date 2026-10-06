@@ -19,11 +19,12 @@ batches concurrent requests, so use `--concurrency`.
 Modal volume, so only the first start of each model is slow.
 
 ```bash
-export KEV_API_KEY=$(openssl rand -hex 24)          # the endpoint requires it; bzaf sends it as BZAF_API_KEY
+export KEV_API_KEY=$(openssl rand -hex 24)          # must be exported BEFORE deploy; keep it in .env (gitignored)
 export BZAF_API_KEY=$KEV_API_KEY
 
-KEV_MODEL=jaredpalmer/kev-4b modal deploy cloud/kev_serve.py   # prints https://<workspace>--kev-api.modal.run
-URL=https://<workspace>--kev-api.modal.run                     # paste the printed URL
+KEV_MODEL=jaredpalmer/kev-4b modal deploy cloud/kev_serve.py
+URL=https://<workspace>--kev-api.modal.run          # the endpoint (dashboard: Endpoints), NOT the modal.com/apps/... page
+curl -s -o /dev/null -w "%{http_code}\n" $URL/v1/models   # without the key: must print 401, else KEV_API_KEY was not exported at deploy
 curl -L --max-time 1200 $URL/v1/models -H "authorization: Bearer $KEV_API_KEY"   # wait for the cold start
 
 M=kev-4b
