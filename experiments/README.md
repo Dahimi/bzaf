@@ -14,6 +14,6 @@ Each `README.md` is written **before** the experiment runs and holds:
 
 | ID | Question | Status |
 |---|---|---|
-| [E01](E01-readout-baselines/) | How good are existing models at multi-answer, and does knowing the count help? Which base model? | ready to run |
-| E02 | Does a trained count head on 0.8B beat the best untrained predictor? | planned |
+| [E01](E01-readout-baselines/) | How good are existing models at multi-answer, and does knowing the count help? Which base model? | done: G1 passed, base = Kev |
+| [E02](E02-count-head/) | Does a trained count head on Kev-0.8B beat the best untrained predictor on unseen datasets? | pre-registered |
 | E03 | 4B scale-up; count head vs no count head; is there residual dependence? | planned |

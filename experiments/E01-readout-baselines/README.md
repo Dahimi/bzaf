@@ -1,6 +1,6 @@
 # E01 — Readout baselines (no training)
 
-**Status:** ready to run · **Hardware:** MacBook Pro M3, 18 GB
+**Status:** done (2026-10-06): G1 passed, base = Kev · **Hardware:** MacBook Pro M3, 18 GB
 
 ## Question
 
@@ -150,6 +150,27 @@ If a full run is too slow, drop a variant (`--variants noul_ctx,pick,count`) bef
 
 Commit each model's `results/<model>.md` here, then write the conclusion and the G1 / base decision below, with a
 [decisions](../../docs/decisions.md) entry.
+
+### Conclusion: G1 passed on both 4B models; base model = Kev (2026-10-06)
+
+[results/imajev-4b.md](results/imajev-4b.md) next to [results/kev-4b.md](results/kev-4b.md). G1 also passes for
+Imajev-4B on all three real datasets (GoEmotions +20.6, SATA +18.0, UNFAIR-ToS +5.7).
+
+| exact-set % | best yes/no (Kev / Imajev) | ranking + true count | model's own count | best untrained predictor |
+|---|---|---|---|---|
+| SATA | 25.2 / **33.1** | 54.0 / 56.8 | 16.9 / 22.3 | 33.8 / 33.1 |
+| UNFAIR-ToS | 92.2 / 93.5 | 98.9 / 99.1 | **82.9** / 72.8 | 92.2 / 93.5 |
+| GoEmotions | 7.5 / 12.0 | 30.3 / 32.6 | 6.0 / **18.4** | 28.1 / 27.7 |
+| synthetic | 88.8 / 92.2 | 99.5 / 99.5 | 61.5 / **79.0** | 88.8 / 92.2 |
+
+- **Base-model rule (pre-registered): a tie.** Mean over the three real datasets of the best untrained predictor:
+  Kev-4B 51.4, Imajev-4B 51.4, well within each other's CIs. Imajev's yes/no is better calibrated on SATA (33 vs
+  25 %) and it counts better when asked, but the ceilings with the true count are the same within noise.
+- **Tie-break (pre-registered): lineage and licence, then trainability.** Both Apache-2.0 with clean declared
+  lineage. Trainability favours **Kev**: a pointer head that the count head plugs into directly, documented training
+  code with `--init_from`, CUDA batching, and no API limits. Imajev refuses requests with more than 8 questions and
+  option names over 128 characters (10 SATA items failed on that and count as wrong, about 2 %).
+- **Decision:** E02 builds on Kev (D10). Repeating the method on Imajev stays an option for the paper (two backbones).
 
 ### Imajev-4B — first run invalid (2026-10-06)
 

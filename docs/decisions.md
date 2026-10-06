@@ -56,3 +56,10 @@ SATA exact-set accuracy (25 → 52–54 %) and wins on all three real datasets; 
 equal once the count is known; asking the model "how many apply?" does not work (9–18 % count accuracy on real data).
 So E02 trains a count head on top of per-option scores, as planned in [approach.md](approach.md). The base model is
 still to be chosen after the Imajev-4B readout.
+
+## D10 — Base model: Kev (2026-10-06)
+E01 base-model rule (mean best untrained predictor over SATA, UNFAIR-ToS, GoEmotions) ties Kev-4B and Imajev-4B
+(51.4 each). Tie broken on trainability, as pre-registered: Kev's pointer head takes the count head directly, its
+training code is documented, and its server batches on CUDA without request limits (Imajev: at most 8 questions per
+request, option names ≤ 128 characters). E02 develops the count head on Kev-0.8B; E03 scales to Kev-4B. Imajev
+remains a candidate second backbone for the paper.

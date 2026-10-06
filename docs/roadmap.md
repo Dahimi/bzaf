@@ -5,7 +5,7 @@ spent. Experiments live in [`experiments/`](../experiments/), one folder each, p
 
 | Phase | When | Where | Experiment | Gate |
 |---|---|---|---|---|
-| 1. Readout baselines | week 1 | Mac, no training | [E01](../experiments/E01-readout-baselines/) | **G1:** ranking + true count beats the best yes/no predictor. Pick the base model. |
+| 1. Readout baselines ✅ | week 1 | Mac, no training | [E01](../experiments/E01-readout-baselines/) | **G1:** ranking + true count beats the best yes/no predictor. Pick the base model. |
 | 2. Count head, small | weeks 2–3 | Mac, 0.8B | E02 | **G2:** trained count model beats the best E01 predictor on held-out datasets (set log-loss and exact-set) without hurting single-answer Choice. |
 | 3. Scale + ablation | week 4 | cloud, 4B (9B if useful) | E03 | **G3:** count head vs count head off (direction 2); residual dependence check decides on the chain head. |
 | 4. Release | weeks 5–6 | — | — | Weights, model card, report; submit to the Decision Index (SATA-Bench, ACOS). |

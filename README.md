@@ -17,8 +17,8 @@ options apply; together they define an exact distribution over answer sets
 
 | Phase | State |
 |---|---|
-| 1. Readout baselines on existing models ([E01](experiments/E01-readout-baselines/)) | harness ready, **next: run on the Mac** |
-| 2. Count head on a 0.8B model | planned |
+| 1. Readout baselines on existing models ([E01](experiments/E01-readout-baselines/)) | ✅ done: count is the bottleneck (G1 passed); base = Kev |
+| 2. Count head on Kev-0.8B ([E02](experiments/E02-count-head/)) | **next** |
 | 3. Scale to 4B in the cloud, ablation | planned |
 | 4. Release weights and report | planned |
 
