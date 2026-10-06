@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 from bzaf.metrics import evaluate, set_f1
-from bzaf.predictors import AlwaysNone, ChoiceOracleCount, Independent, OracleCount, ScoresPlusCount, fit_platt
+from bzaf.predictors import AlwaysNone, ChoiceOracleCount, Independent, OracleCount, ScoresPlusCount, ScoresPlusDevPrior, fit_platt
 from bzaf.score import format_report, score_files, score_records
 
 
@@ -39,6 +39,8 @@ def test_predictors_on_one_record():
     assert ScoresPlusCount("noul").predict(r).subset == {0, 2}
     assert OracleCount("noul").predict(r).subset == {0, 2}
     assert AlwaysNone().predict(r).subset == set()
+    prior = ScoresPlusDevPrior("pick").fit([rec(), rec(gold=[1, 3]), rec(gold=[0])])   # sizes 2, 2, 1 -> 2 most likely
+    assert prior.predict(r).subset == {0, 2}
 
 
 def test_score_records_end_to_end():

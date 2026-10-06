@@ -49,3 +49,10 @@ time on Metal), while Kev on CUDA batches up to 64 requests.
 *Why Modal over RunPod:* our jobs are short and bursty (readouts, ~$1 training runs), so per-second billing with no idle
 or setup time outweighs RunPod's lower hourly rate; Kev already ships a Modal script. RunPod stays the option for long
 continuous jobs.
+
+## D9 — G1 passed: build the count head (2026-10-06)
+Kev-4B readout (E01): given the true number of answers, the model's existing per-option ranking roughly doubles
+SATA exact-set accuracy (25 → 52–54 %) and wins on all three real datasets; yes/no and Choice rankings are about
+equal once the count is known; asking the model "how many apply?" does not work (9–18 % count accuracy on real data).
+So E02 trains a count head on top of per-option scores, as planned in [approach.md](approach.md). The base model is
+still to be chosen after the Imajev-4B readout.

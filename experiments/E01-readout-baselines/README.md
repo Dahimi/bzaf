@@ -151,6 +151,33 @@ If a full run is too slow, drop a variant (`--variants noul_ctx,pick,count`) bef
 Commit each model's `results/<model>.md` here, then write the conclusion and the G1 / base decision below, with a
 [decisions](../../docs/decisions.md) entry.
 
+### Kev-4B — the decision run (2026-10-06, Modal L40S)
+
+[results/kev-4b.md](results/kev-4b.md). **G1 passes on all three real datasets** (pre-registered: ≥ +5 points with the
+CI above 0 on 2 of 3): GoEmotions +22.9, SATA +26.6, UNFAIR-ToS +6.7.
+
+| | best yes/no | Choice ranking + true count | yes/no ranking + true count | model's own count |
+|---|---|---|---|---|
+| SATA | 25.2 % | 51.8 % | **54.0 %** | 16.9 % |
+| UNFAIR-ToS | 92.2 % (always "none": 88.2) | 98.9 % | 98.9 % | 82.9 % |
+| Synthetic | 88.8 % | 99.5 % | 99.5 % | 61.5 % |
+| GoEmotions | 7.5 % | 30.3 % | 25.8 % | 6.0 % |
+
+1. **The gap is the count, confirmed at 4B.** Told the true count, yes/no and Choice rankings tie on SATA,
+   UNFAIR-ToS and synthetic (Choice is +4.5 on GoEmotions). With the right count, SATA exact-set doubles
+   (25 → 52–54 %). For reference, Jev's published SATA score with yes/no is 26.4 % (Decision Index, slightly
+   different item set): Kev-4B's yes/no is on par.
+2. **Asking for the count still fails** on real data: count accuracy 9 % on GoEmotions (it answers "none" on average),
+   18 % on SATA (about 1 answer for 3.6 true). It improved on synthetic (7 → 62 %), so scale helps on clean structured
+   inputs only. The count has to be trained: headroom S2 is −16 to −38 points.
+3. **GoEmotions is near its ceiling for this setup** (≈ 30 % even with the true count, no better than 0.8B): label
+   noise dominates. It stays as an over-selection check, not as a discriminating benchmark.
+4. **Decision:** G1 passed → E02 builds the count head ([decisions](../../docs/decisions.md), D9). Base choice waits
+   for Imajev-4B.
+
+Added after this run: `pick+dev_prior` / `noul_ctx+dev_prior` (the dataset's typical count, same for every item) and
+signal S5. They tell whether the count head must read each item or only learn a per-dataset prior. Re-score to add them.
+
 ### Interim notes — Kev-0.8B (2026-10-05, not the decision run)
 
 [results/kev-0.8b.md](results/kev-0.8b.md). Scored before the `noul*+true_count` and `always_none` controls existed;

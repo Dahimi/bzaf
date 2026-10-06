@@ -132,6 +132,37 @@ class ScoresPlusCount(Predictor):
         return Prediction(set(dist.mode()), dist)
 
 
+class ScoresPlusDevPrior(Predictor):
+    """Option scores plus the dataset's typical number of answers (count histogram of the dev split, add-one smoothed),
+    the same for every item. Control for the count head: if this matches item-level counting, a learned count head
+    only needs the dataset prior; if not, the count must be read from each item."""
+
+    def __init__(self, field: str = "pick"):
+        self.field, self.needs, self.name = field, (field,), f"{field}+dev_prior"
+        self.hist: np.ndarray | None = None
+
+    def fit(self, dev):
+        sizes = [len(r["gold"]) for r in dev if "error" not in r]
+        kmax = max([r["k"] for r in dev if "error" not in r] + [1])
+        h = np.ones(kmax + 1)
+        for n in sizes:
+            h[n] += 1
+        self.hist = h / h.sum()
+        return self
+
+    def predict(self, rec):
+        h = self.hist if self.hist is not None else np.ones(rec["k"] + 1)
+        c = np.full(rec["k"] + 1, 1e-6)
+        n = min(len(h), rec["k"] + 1)
+        c[:n] = h[:n]
+        c = c / c.sum()
+        if self.field == "pick":
+            dist = SetDistribution.from_scores(rec["pick"], c)
+        else:
+            dist = SetDistribution.from_logits_and_count(logit(rec[self.field]), c)
+        return Prediction(set(dist.mode()), dist)
+
+
 def default_predictors() -> list[Predictor]:
     return [
         Independent("noul"),
@@ -146,4 +177,6 @@ def default_predictors() -> list[Predictor]:
         ScoresPlusCount("pick"),
         ScoresPlusCount("noul"),
         ScoresPlusCount("noul_ctx"),
+        ScoresPlusDevPrior("pick"),
+        ScoresPlusDevPrior("noul_ctx"),
     ]

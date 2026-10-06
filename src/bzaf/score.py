@@ -65,6 +65,7 @@ def comparisons(rows: dict) -> dict:
     diff("R1 Choice ranking vs yes/no ranking (both told the count)", "pick+true_count", "noul_ctx+true_count")
     diff("C1 value of the right count over top-1", "pick+true_count", "pick@top1")
     diff("S2 asked count vs true count (headroom)", "pick+count", "pick+true_count")
+    diff("S5 dataset count prior vs true count (item-level counting headroom)", "pick+dev_prior", "pick+true_count")
     diff("S3 count dial on yes/no (ctx)", "noul_ctx+count", "noul_ctx@0.5")
     diff("S4 options in context (yes/no)", "noul_ctx@0.5", "noul@0.5")
     diff("S3 count dial on yes/no (ctx), log-loss", "noul_ctx+count", "noul_ctx@0.5", metric="per_item_nll", scale=1.0)
