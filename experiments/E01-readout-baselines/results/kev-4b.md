@@ -16,6 +16,8 @@
 | pick+count | 6.0 [3.4, 9.0] | 0.070 | 0.116 | 0.094 | 0.11 (1.18) | 4.530 |
 | noul+count | 4.1 [1.9, 6.7] | 0.044 | 0.073 | 0.052 | 0.06 (1.18) | 4.803 |
 | noul_ctx+count | 5.6 [3.0, 8.6] | 0.069 | 0.116 | 0.090 | 0.11 (1.18) | 4.593 |
+| pick+dev_prior | 28.1 [22.5, 33.7] | 0.333 | 0.330 | 0.828 | 1.00 (1.18) | 3.268 |
+| noul_ctx+dev_prior | 24.0 [19.1, 29.2] | 0.292 | 0.292 | 0.828 | 1.00 (1.18) | 3.331 |
 
 | signal | a − b | mean [95% CI] |
 |---|---|---|
@@ -23,6 +25,7 @@
 | R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +4.49 pts [+0.37, +8.99] |
 | C1 value of the right count over top-1 | pick+true_count − pick@top1 | +2.25 pts [+0.75, +4.12] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -24.34 pts [-29.60, -19.10] |
+| S5 dataset count prior vs true count (item-level counting headroom) | pick+dev_prior − pick+true_count | -2.25 pts [-4.12, -0.75] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | +2.62 pts [-0.75, +5.99] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | -1.50 pts [-4.12, +1.12] |
 | S3 count dial on yes/no (ctx), log-loss | noul_ctx+count − noul_ctx@0.5 | -2.52 nats [-2.72, -2.32] |
@@ -43,6 +46,8 @@
 | pick+count | 16.9 [12.6, 21.6] | 0.360 | 0.397 | 0.180 | 0.96 (3.58) | 4.430 |
 | noul+count | 12.2 [8.6, 15.8] | 0.265 | 0.287 | 0.126 | 0.63 (3.58) | 4.642 |
 | noul_ctx+count | 14.0 [10.1, 18.3] | 0.325 | 0.360 | 0.144 | 0.83 (3.58) | 4.406 |
+| pick+dev_prior | 33.8 [28.4, 39.6] | 0.698 | 0.651 | 0.457 | 2.28 (3.58) | 3.813 |
+| noul_ctx+dev_prior | 30.2 [25.2, 36.0] | 0.693 | 0.648 | 0.439 | 2.31 (3.58) | 3.788 |
 
 | signal | a − b | mean [95% CI] |
 |---|---|---|
@@ -50,6 +55,7 @@
 | R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | -2.16 pts [-5.40, +1.08] |
 | C1 value of the right count over top-1 | pick+true_count − pick@top1 | +51.80 pts [+46.04, +57.55] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -34.89 pts [-40.65, -29.50] |
+| S5 dataset count prior vs true count (item-level counting headroom) | pick+dev_prior − pick+true_count | -17.99 pts [-22.66, -13.31] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | -11.15 pts [-15.83, -6.83] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | +5.04 pts [+0.36, +9.71] |
 | S3 count dial on yes/no (ctx), log-loss | noul_ctx+count − noul_ctx@0.5 | +0.51 nats [+0.36, +0.67] |
@@ -70,6 +76,8 @@
 | pick+count | 61.5 [54.6, 68.3] | 0.827 | 0.857 | 0.615 | 2.21 (2.79) | 1.501 |
 | noul+count | 61.0 [54.1, 67.8] | 0.854 | 0.876 | 0.615 | 2.28 (2.79) | 1.422 |
 | noul_ctx+count | 58.5 [51.7, 65.4] | 0.837 | 0.858 | 0.585 | 2.22 (2.79) | 1.481 |
+| pick+dev_prior | 67.3 [61.0, 73.7] | 0.852 | 0.858 | 0.673 | 2.45 (2.79) | 2.014 |
+| noul_ctx+dev_prior | 64.9 [58.5, 71.2] | 0.835 | 0.835 | 0.649 | 2.40 (2.79) | 1.994 |
 
 | signal | a − b | mean [95% CI] |
 |---|---|---|
@@ -77,6 +85,7 @@
 | R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +0.00 pts [-1.46, +1.46] |
 | C1 value of the right count over top-1 | pick+true_count − pick@top1 | +80.00 pts [+74.63, +85.37] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -38.05 pts [-44.39, -31.22] |
+| S5 dataset count prior vs true count (item-level counting headroom) | pick+dev_prior − pick+true_count | -32.20 pts [-38.54, -25.85] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | -28.29 pts [-35.12, -20.98] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | -1.95 pts [-6.34, +2.93] |
 | S3 count dial on yes/no (ctx), log-loss | noul_ctx+count − noul_ctx@0.5 | +0.62 nats [+0.54, +0.70] |
@@ -97,6 +106,8 @@
 | pick+count | 82.9 [79.7, 86.0] | 0.834 | 0.510 | 0.832 | 0.24 (0.13) | 0.764 |
 | noul+count | 89.2 [86.6, 91.7] | 0.893 | 0.504 | 0.896 | 0.11 (0.13) | 0.846 |
 | noul_ctx+count | 85.9 [82.9, 88.9] | 0.862 | 0.533 | 0.860 | 0.19 (0.13) | 0.782 |
+| pick+dev_prior | 88.2 [85.3, 90.6] | 0.882 | 0.000 | 0.882 | 0.00 (0.13) | 0.470 |
+| noul_ctx+dev_prior | 88.2 [85.3, 90.6] | 0.882 | 0.000 | 0.882 | 0.00 (0.13) | 0.489 |
 
 | signal | a − b | mean [95% CI] |
 |---|---|---|
@@ -104,6 +115,7 @@
 | R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +0.00 pts [-0.53, +0.53] |
 | C1 value of the right count over top-1 | pick+true_count − pick@top1 | +88.52 pts [+85.87, +90.99] |
 | S2 asked count vs true count (headroom) | pick+count − pick+true_count | -16.08 pts [-19.08, -12.90] |
+| S5 dataset count prior vs true count (item-level counting headroom) | pick+dev_prior − pick+true_count | -10.78 pts [-13.43, -8.30] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | +24.03 pts [+20.32, +27.92] |
 | S4 options in context (yes/no) | noul_ctx@0.5 − noul@0.5 | -1.41 pts [-5.30, +2.65] |
 | S3 count dial on yes/no (ctx), log-loss | noul_ctx+count − noul_ctx@0.5 | -1.57 nats [-1.69, -1.46] |
