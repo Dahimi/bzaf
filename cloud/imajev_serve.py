@@ -15,7 +15,7 @@ as the eager path, per Imajev's docs). --max-input-tokens is raised from 4096 to
 rather than refused; note this goes beyond Imajev's training length.
 
 Imajev's server answers requests one at a time (a lock around the GPU), so readout concurrency above ~4 only hides
-network latency. The URL is public while the app runs and there is no API key: stop the app after each readout.
+network latency. It also refuses requests with more than 8 questions: run `bzaf readout` with --max-questions 8. The URL is public while the app runs and there is no API key: stop the app after each readout.
 """
 import os
 import subprocess

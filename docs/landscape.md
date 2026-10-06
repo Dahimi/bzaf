@@ -53,7 +53,8 @@ the number of answers (count bias); the Choice Funnel decoding adds up to +29 po
 | [Decision 2.0](https://huggingface.co/collections/vllm-sr/decision-20) | Kai 0.6B, Eos 0.8B, Sol 2B, Nox 4B, Lux 9B, Vega 27B; Apache-2.0 | encoder (Kai); Qwen3.5 + shared candidate head (others) | not yet checked | vLLM Semantic Router team. Vega 56.47 on the Decision Index (#3). |
 | Laya, Von, GLiClass, GLiNER2 | ModernBERT / mmBERT encoders | label scoring | varies | GLiClass already does multi-label with labels in context (direction 2 exists). |
 
-Multi-answer in the ecosystem today: LLEV `multi` (one yes/no pass per option); Haste Jev `set_choice` (research
+Multi-answer in the ecosystem today: LLEV `multi` (one yes/no pass per option); Imajev `multi` (serving-only fan-out
+to one yes/no per label, threshold 0.5, up to 32 labels); Haste Jev `set_choice` (research
 prototype); JevK5-Lite sigmoid heads (encoder only). **Nobody returns calibrated answer-set probabilities or honours
 count constraints.**
 

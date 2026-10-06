@@ -151,6 +151,16 @@ If a full run is too slow, drop a variant (`--variants noul_ctx,pick,count`) bef
 Commit each model's `results/<model>.md` here, then write the conclusion and the G1 / base decision below, with a
 [decisions](../../docs/decisions.md) entry.
 
+### Imajev-4B — first run invalid (2026-10-06)
+
+Imajev's API accepts at most 8 questions per request (`MAX_QUESTIONS = 8` in its `jev_api.py`); our readout sent up
+to 64, so every item with more than three options was refused (HTTP 422) and only 7 SATA items were scored. Those
+results were deleted. Re-run with `--max-questions 8`. The score report now shows failed items and the first error
+at the top of each dataset, so this cannot pass unnoticed again.
+
+Side note for the landscape: Imajev also serves a `multi` question type, which fans out to one yes/no per label with
+a fixed threshold (default 0.5): the same as our `noul@0.5` baseline, not a set model.
+
 ### Kev-4B — the decision run (2026-10-06, Modal L40S)
 
 [results/kev-4b.md](results/kev-4b.md). **G1 passes on all three real datasets** (pre-registered: ≥ +5 points with the

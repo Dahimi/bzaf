@@ -61,6 +61,7 @@ def test_score_records_end_to_end():
     assert "set_nll" in rows["noul@0.5"] and "set_nll" not in rows["pick+true_count"]
     text = format_report(report, "fake")
     assert "G1 ranking+true count vs best yes/no" in text
+    assert report["d"]["n_failed"] == 1 and "1 items failed" in text
 
 
 def test_score_files_keeps_dotted_model_names(tmp_path):

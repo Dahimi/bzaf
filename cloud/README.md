@@ -46,7 +46,8 @@ IMAJEV_SIZE=4b modal deploy cloud/imajev_serve.py   # prints https://<workspace>
 URL=https://<workspace>--bzaf-imajev-serve.modal.run
 curl -L --max-time 1800 $URL/v1/models              # first start downloads ~9 GB and captures CUDA graphs
 M=imajev-4b
-# same readout loop and score command as above, with --concurrency 4 (Imajev answers one request at a time)
+# same readout loop and score command as above, with --concurrency 4 --max-questions 8
+# (Imajev answers one request at a time and refuses requests with more than 8 questions)
 modal app stop bzaf-imajev
 ```
 

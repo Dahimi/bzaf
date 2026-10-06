@@ -44,7 +44,9 @@ def score_records(records: list[dict], dev_frac: float = 0.3) -> dict:
             if has_dist:
                 m["nll_ci"] = bootstrap_ci(m["per_item_nll"])
             rows[pred.name] = m
-        report[ds] = {"n_dev": len(dev), "n_test": len(test), "predictors": rows, "comparisons": comparisons(rows)}
+        errors = [r["error"] for r in recs if "error" in r]
+        report[ds] = {"n_dev": len(dev), "n_test": len(test), "n_failed": len(errors), "first_error": errors[0] if errors else None,
+                      "predictors": rows, "comparisons": comparisons(rows)}
     return report
 
 
@@ -75,7 +77,13 @@ def comparisons(rows: dict) -> dict:
 def format_report(report: dict, model: str = "") -> str:
     lines = [f"# E01 readout scores{f' — {model}' if model else ''}", ""]
     for ds, r in report.items():
-        lines += [f"## {ds} (dev {r['n_dev']}, test {r['n_test']})", "",
+        failed = r.get("n_failed", 0)
+        lines += [f"## {ds} (dev {r['n_dev']}, test {r['n_test']}, failed {failed})", ""]
+        if failed:
+            share = failed / max(1, r["n_dev"] + r["n_test"])
+            lines += [f"> **{'WARNING: ' if share > 0.02 else ''}{failed} items failed ({100 * share:.0f} %)** and count as wrong. "
+                      f"First error: `{(r.get('first_error') or '')[:300]}`. Re-run the readout to retry them.", ""]
+        lines += [
                   "| predictor | exact-set % [95% CI] | example F1 | micro F1 | count acc | mean size (gold) | set log-loss |",
                   "|---|---|---|---|---|---|---|"]
         for name, m in r["predictors"].items():
