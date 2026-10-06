@@ -185,8 +185,11 @@ CI above 0 on 2 of 3): GoEmotions +22.9, SATA +26.6, UNFAIR-ToS +6.7.
 4. **Decision:** G1 passed → E02 builds the count head ([decisions](../../docs/decisions.md), D9). Base choice waits
    for Imajev-4B.
 
-Added after this run: `pick+dev_prior` / `noul_ctx+dev_prior` (the dataset's typical count, same for every item) and
-signal S5. They tell whether the count head must read each item or only learn a per-dataset prior. Re-score to add them.
+**S5 (re-scored): the count must be read from each item, not just from the dataset.** Using the dataset's typical
+count for every item already beats the best yes/no on SATA (33.8 vs 25.2 %), but item-level counting is worth much
+more: true count minus dataset prior is +18.0 points on SATA, +32.2 on synthetic, +10.8 on UNFAIR-ToS (+2.3 on
+GoEmotions, where almost every item has one answer). So the count head has to look at the item, which is what it is
+designed to do; the dataset prior becomes an E02 baseline.
 
 ### Interim notes — Kev-0.8B (2026-10-05, not the decision run)
 
