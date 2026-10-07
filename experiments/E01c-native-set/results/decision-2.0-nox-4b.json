@@ -1,0 +1,986 @@
+{
+  "goemotions": {
+    "n_dev": 133,
+    "n_test": 267,
+    "n_failed": 0,
+    "first_error": null,
+    "predictors": {
+      "noul_ctx@0.5": {
+        "n": 267,
+        "exact": 0.04119850187265917,
+        "example_f1": 0.3486326615540098,
+        "micro_f1": 0.3333333333333333,
+        "count_acc": 0.0749063670411985,
+        "mean_pred_size": 3.4269662921348316,
+        "mean_gold_size": 1.1797752808988764,
+        "set_nll": 9.249562046469258,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.018726591760299626,
+          0.06741573033707865
+        ],
+        "nll_ci": [
+          9.026554268099824,
+          9.469786016238054
+        ]
+      },
+      "noul_ctx+platt": {
+        "n": 267,
+        "exact": 0.16853932584269662,
+        "example_f1": 0.21161048689138576,
+        "micro_f1": 0.3037383177570093,
+        "count_acc": 0.29213483146067415,
+        "mean_pred_size": 0.4232209737827715,
+        "mean_gold_size": 1.1797752808988764,
+        "set_nll": 3.400681983173519,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.12359550561797752,
+          0.21348314606741572
+        ],
+        "nll_ci": [
+          3.1824883983470125,
+          3.6303022937811615
+        ]
+      },
+      "always_none": {
+        "n": 267,
+        "exact": 0.0,
+        "example_f1": 0.0,
+        "micro_f1": 0.0,
+        "count_acc": 0.0,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 1.1797752808988764,
+        "exact_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "pick@top1": {
+        "n": 267,
+        "exact": 0.33707865168539325,
+        "example_f1": 0.40074906367041196,
+        "micro_f1": 0.39862542955326463,
+        "count_acc": 0.8277153558052435,
+        "mean_pred_size": 1.0,
+        "mean_gold_size": 1.1797752808988764,
+        "exact_ci": [
+          0.2808988764044944,
+          0.39325842696629215
+        ]
+      },
+      "pick+true_count": {
+        "n": 267,
+        "exact": 0.3782771535580524,
+        "example_f1": 0.4282147315855181,
+        "micro_f1": 0.4444444444444444,
+        "count_acc": 1.0,
+        "mean_pred_size": 1.1797752808988764,
+        "mean_gold_size": 1.1797752808988764,
+        "exact_ci": [
+          0.31835205992509363,
+          0.4344569288389513
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 267,
+        "exact": 0.35580524344569286,
+        "example_f1": 0.3963795255930087,
+        "micro_f1": 0.4126984126984127,
+        "count_acc": 1.0,
+        "mean_pred_size": 1.1797752808988764,
+        "mean_gold_size": 1.1797752808988764,
+        "exact_ci": [
+          0.299625468164794,
+          0.41198501872659177
+        ]
+      },
+      "pick+count": {
+        "n": 267,
+        "exact": 0.1348314606741573,
+        "example_f1": 0.2550561797752809,
+        "micro_f1": 0.36432637571157495,
+        "count_acc": 0.23595505617977527,
+        "mean_pred_size": 0.7940074906367042,
+        "mean_gold_size": 1.1797752808988764,
+        "set_nll": 4.162647298889958,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.09363295880149813,
+          0.1760299625468165
+        ],
+        "nll_ci": [
+          3.988439005785794,
+          4.346206832174448
+        ]
+      },
+      "noul_ctx+count": {
+        "n": 267,
+        "exact": 0.12734082397003746,
+        "example_f1": 0.2181023720349563,
+        "micro_f1": 0.33820459290187893,
+        "count_acc": 0.22846441947565543,
+        "mean_pred_size": 0.6142322097378277,
+        "mean_gold_size": 1.1797752808988764,
+        "set_nll": 4.424466795814201,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.0898876404494382,
+          0.16853932584269662
+        ],
+        "nll_ci": [
+          4.249356385565993,
+          4.608275086980757
+        ]
+      },
+      "pick+dev_prior": {
+        "n": 267,
+        "exact": 0.33707865168539325,
+        "example_f1": 0.40074906367041196,
+        "micro_f1": 0.39862542955326463,
+        "count_acc": 0.8277153558052435,
+        "mean_pred_size": 1.0,
+        "mean_gold_size": 1.1797752808988764,
+        "set_nll": 2.8292651965845965,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.2808988764044944,
+          0.39325842696629215
+        ],
+        "nll_ci": [
+          2.6145432489995897,
+          3.044946257604702
+        ]
+      },
+      "noul_ctx+dev_prior": {
+        "n": 267,
+        "exact": 0.31086142322097376,
+        "example_f1": 0.37765293383270904,
+        "micro_f1": 0.37800687285223367,
+        "count_acc": 0.8277153558052435,
+        "mean_pred_size": 1.0,
+        "mean_gold_size": 1.1797752808988764,
+        "set_nll": 3.091084693508839,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.2546816479400749,
+          0.3633895131086137
+        ],
+        "nll_ci": [
+          2.8744922244872195,
+          3.307538812423805
+        ]
+      }
+    },
+    "comparisons": {
+      "G1 ranking+true count vs best yes/no": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+platt",
+        "metric": "per_item_exact",
+        "mean": 20.973782771535582,
+        "ci": [
+          16.479400749063668,
+          26.217228464419474
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": 2.247191011235955,
+        "ci": [
+          -1.1235955056179776,
+          5.617977528089887
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 4.119850187265917,
+        "ci": [
+          1.8726591760299627,
+          6.741573033707865
+        ]
+      },
+      "S2 asked count vs true count (headroom)": {
+        "a": "pick+count",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -24.344569288389515,
+        "ci": [
+          -29.588014981273407,
+          -19.475655430711612
+        ]
+      },
+      "S5 dataset count prior vs true count (item-level counting headroom)": {
+        "a": "pick+dev_prior",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -4.119850187265917,
+        "ci": [
+          -6.741573033707865,
+          -1.8726591760299627
+        ]
+      },
+      "S3 count dial on yes/no (ctx)": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_exact",
+        "mean": 8.614232209737828,
+        "ci": [
+          4.868913857677903,
+          12.359550561797752
+        ]
+      },
+      "S3 count dial on yes/no (ctx), log-loss": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_nll",
+        "mean": -4.825095250655057,
+        "ci": [
+          -4.958841167598756,
+          -4.686372315026338
+        ]
+      }
+    }
+  },
+  "sata": {
+    "n_dev": 122,
+    "n_test": 278,
+    "n_failed": 16,
+    "first_error": "HTTP 503: b'{\"error\":{\"code\":\"not_ready\",\"message\":\"model decision-2.0-nox-4b is loading\"}}'",
+    "predictors": {
+      "noul_ctx@0.5": {
+        "n": 278,
+        "exact": 0.29136690647482016,
+        "example_f1": 0.7259969850009274,
+        "micro_f1": 0.7611202635914333,
+        "count_acc": 0.3381294964028777,
+        "mean_pred_size": 3.0898876404494384,
+        "mean_gold_size": 3.58273381294964,
+        "set_nll": 3.4839787391006913,
+        "nll_coverage": 0.960431654676259,
+        "exact_ci": [
+          0.24100719424460432,
+          0.3489208633093525
+        ],
+        "nll_ci": [
+          3.1727174145436265,
+          3.8018809497317494
+        ]
+      },
+      "noul_ctx+platt": {
+        "n": 278,
+        "exact": 0.28776978417266186,
+        "example_f1": 0.7522362233804534,
+        "micro_f1": 0.7774358974358975,
+        "count_acc": 0.33093525179856115,
+        "mean_pred_size": 3.5730337078651684,
+        "mean_gold_size": 3.58273381294964,
+        "set_nll": 3.3814476828868436,
+        "nll_coverage": 0.960431654676259,
+        "exact_ci": [
+          0.23741007194244604,
+          0.34532374100719426
+        ],
+        "nll_ci": [
+          3.0471722064604783,
+          3.707859894501994
+        ]
+      },
+      "always_none": {
+        "n": 278,
+        "exact": 0.0,
+        "example_f1": 0.0,
+        "micro_f1": 0.0,
+        "count_acc": 0.0,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 3.58273381294964,
+        "exact_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "pick@top1": {
+        "n": 278,
+        "exact": 0.0,
+        "example_f1": 0.44899612777310616,
+        "micro_f1": 0.4006334125098971,
+        "count_acc": 0.0,
+        "mean_pred_size": 1.0,
+        "mean_gold_size": 3.58273381294964,
+        "exact_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "pick+true_count": {
+        "n": 278,
+        "exact": 0.539568345323741,
+        "example_f1": 0.7877383807239923,
+        "micro_f1": 0.8199389623601221,
+        "count_acc": 0.960431654676259,
+        "mean_pred_size": 3.6329588014981273,
+        "mean_gold_size": 3.58273381294964,
+        "exact_ci": [
+          0.4856115107913669,
+          0.6007194244604317
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 278,
+        "exact": 0.5287769784172662,
+        "example_f1": 0.7904276578737011,
+        "micro_f1": 0.8179043743641913,
+        "count_acc": 0.960431654676259,
+        "mean_pred_size": 3.6329588014981273,
+        "mean_gold_size": 3.58273381294964,
+        "exact_ci": [
+          0.4712230215827338,
+          0.5899280575539568
+        ]
+      },
+      "pick+count": {
+        "n": 278,
+        "exact": 0.31654676258992803,
+        "example_f1": 0.6406431403591569,
+        "micro_f1": 0.7131336405529954,
+        "count_acc": 0.35251798561151076,
+        "mean_pred_size": 2.7715355805243447,
+        "mean_gold_size": 3.58273381294964,
+        "set_nll": 3.6127076078072986,
+        "nll_coverage": 0.960431654676259,
+        "exact_ci": [
+          0.26258992805755393,
+          0.37050359712230213
+        ],
+        "nll_ci": [
+          3.298484254685492,
+          3.940176909131478
+        ]
+      },
+      "noul_ctx+count": {
+        "n": 278,
+        "exact": 0.32014388489208634,
+        "example_f1": 0.5996135758725687,
+        "micro_f1": 0.684179104477612,
+        "count_acc": 0.34532374100719426,
+        "mean_pred_size": 2.5430711610486894,
+        "mean_gold_size": 3.58273381294964,
+        "set_nll": 3.6951394460773392,
+        "nll_coverage": 0.960431654676259,
+        "exact_ci": [
+          0.26618705035971224,
+          0.3776978417266187
+        ],
+        "nll_ci": [
+          3.3927707998552976,
+          3.999156619203089
+        ]
+      },
+      "pick+dev_prior": {
+        "n": 278,
+        "exact": 0.31654676258992803,
+        "example_f1": 0.6678737529456953,
+        "micro_f1": 0.6406443618339529,
+        "count_acc": 0.42805755395683454,
+        "mean_pred_size": 2.3146067415730336,
+        "mean_gold_size": 3.58273381294964,
+        "set_nll": 3.55973954338898,
+        "nll_coverage": 0.960431654676259,
+        "exact_ci": [
+          0.26258992805755393,
+          0.37410071942446044
+        ],
+        "nll_ci": [
+          3.2621837547994192,
+          3.869895458933102
+        ]
+      },
+      "noul_ctx+dev_prior": {
+        "n": 278,
+        "exact": 0.29136690647482016,
+        "example_f1": 0.6674473009005383,
+        "micro_f1": 0.6386861313868614,
+        "count_acc": 0.39568345323741005,
+        "mean_pred_size": 2.4269662921348316,
+        "mean_gold_size": 3.58273381294964,
+        "set_nll": 3.6421713816590215,
+        "nll_coverage": 0.960431654676259,
+        "exact_ci": [
+          0.23741007194244604,
+          0.34532374100719426
+        ],
+        "nll_ci": [
+          3.3540724327008364,
+          3.9315435843088657
+        ]
+      }
+    },
+    "comparisons": {
+      "G1 ranking+true count vs best yes/no": {
+        "a": "pick+true_count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_exact",
+        "mean": 24.820143884892087,
+        "ci": [
+          19.784172661870503,
+          30.575539568345324
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": 1.079136690647482,
+        "ci": [
+          -2.5179856115107913,
+          5.0359712230215825
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 53.956834532374096,
+        "ci": [
+          48.561151079136685,
+          60.07194244604317
+        ]
+      },
+      "S2 asked count vs true count (headroom)": {
+        "a": "pick+count",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -22.302158273381295,
+        "ci": [
+          -27.347122302158276,
+          -17.62589928057554
+        ]
+      },
+      "S5 dataset count prior vs true count (item-level counting headroom)": {
+        "a": "pick+dev_prior",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -22.302158273381295,
+        "ci": [
+          -27.33812949640288,
+          -17.62589928057554
+        ]
+      },
+      "S3 count dial on yes/no (ctx)": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_exact",
+        "mean": 2.877697841726619,
+        "ci": [
+          -2.158273381294964,
+          7.553956834532374
+        ]
+      },
+      "S3 count dial on yes/no (ctx), log-loss": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_nll",
+        "mean": 0.211160706976648,
+        "ci": [
+          0.10734890999835327,
+          0.3202976498444891
+        ]
+      }
+    }
+  },
+  "synthetic": {
+    "n_dev": 95,
+    "n_test": 205,
+    "n_failed": 0,
+    "first_error": null,
+    "predictors": {
+      "noul_ctx@0.5": {
+        "n": 205,
+        "exact": 0.9463414634146341,
+        "example_f1": 0.9822496202984007,
+        "micro_f1": 0.9904264577893821,
+        "count_acc": 0.9463414634146341,
+        "mean_pred_size": 2.8146341463414632,
+        "mean_gold_size": 2.790243902439024,
+        "set_nll": 0.4546667929093269,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.9170731707317074,
+          0.975609756097561
+        ],
+        "nll_ci": [
+          0.40380232368425506,
+          0.5095780560326681
+        ]
+      },
+      "noul_ctx+platt": {
+        "n": 205,
+        "exact": 0.9463414634146341,
+        "example_f1": 0.9822496202984007,
+        "micro_f1": 0.9904264577893821,
+        "count_acc": 0.9463414634146341,
+        "mean_pred_size": 2.8146341463414632,
+        "mean_gold_size": 2.790243902439024,
+        "set_nll": 0.21265425354688378,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.9170731707317074,
+          0.975609756097561
+        ],
+        "nll_ci": [
+          0.11029682260608659,
+          0.34493940987406196
+        ]
+      },
+      "always_none": {
+        "n": 205,
+        "exact": 0.04390243902439024,
+        "example_f1": 0.04390243902439024,
+        "micro_f1": 0.0,
+        "count_acc": 0.04390243902439024,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 2.790243902439024,
+        "exact_ci": [
+          0.01951219512195122,
+          0.07317073170731707
+        ]
+      },
+      "pick@top1": {
+        "n": 205,
+        "exact": 0.1902439024390244,
+        "example_f1": 0.5566898954703833,
+        "micro_f1": 0.4967824967824968,
+        "count_acc": 0.1951219512195122,
+        "mean_pred_size": 1.0,
+        "mean_gold_size": 2.790243902439024,
+        "exact_ci": [
+          0.13658536585365855,
+          0.24390243902439024
+        ]
+      },
+      "pick+true_count": {
+        "n": 205,
+        "exact": 0.9560975609756097,
+        "example_f1": 0.985075493612079,
+        "micro_f1": 0.9842657342657343,
+        "count_acc": 1.0,
+        "mean_pred_size": 2.790243902439024,
+        "mean_gold_size": 2.790243902439024,
+        "exact_ci": [
+          0.9219512195121952,
+          0.9804878048780488
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 205,
+        "exact": 1.0,
+        "example_f1": 1.0,
+        "micro_f1": 1.0,
+        "count_acc": 1.0,
+        "mean_pred_size": 2.790243902439024,
+        "mean_gold_size": 2.790243902439024,
+        "exact_ci": [
+          1.0,
+          1.0
+        ]
+      },
+      "pick+count": {
+        "n": 205,
+        "exact": 0.8439024390243902,
+        "example_f1": 0.9669804450292255,
+        "micro_f1": 0.9692307692307692,
+        "count_acc": 0.8439024390243902,
+        "mean_pred_size": 2.9170731707317072,
+        "mean_gold_size": 2.790243902439024,
+        "set_nll": 0.8959048792254152,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.7902439024390244,
+          0.8878048780487805
+        ],
+        "nll_ci": [
+          0.7825516312465598,
+          1.019859699906826
+        ]
+      },
+      "noul_ctx+count": {
+        "n": 205,
+        "exact": 0.8780487804878049,
+        "example_f1": 0.9735450457401676,
+        "micro_f1": 0.9784668389319552,
+        "count_acc": 0.8780487804878049,
+        "mean_pred_size": 2.873170731707317,
+        "mean_gold_size": 2.790243902439024,
+        "set_nll": 0.6950949149395359,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.8341463414634146,
+          0.9219512195121952
+        ],
+        "nll_ci": [
+          0.6173201945393679,
+          0.7791376610456965
+        ]
+      },
+      "pick+dev_prior": {
+        "n": 205,
+        "exact": 0.7024390243902439,
+        "example_f1": 0.8403484320557492,
+        "micro_f1": 0.8458646616541353,
+        "count_acc": 0.7073170731707317,
+        "mean_pred_size": 2.4,
+        "mean_gold_size": 2.790243902439024,
+        "set_nll": 2.0662313745078476,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.6389024390243903,
+          0.7658536585365854
+        ],
+        "nll_ci": [
+          1.9466554311784507,
+          2.1989063661248256
+        ]
+      },
+      "noul_ctx+dev_prior": {
+        "n": 205,
+        "exact": 0.7658536585365854,
+        "example_f1": 0.8855013550135501,
+        "micro_f1": 0.8878504672897196,
+        "count_acc": 0.7658536585365854,
+        "mean_pred_size": 2.4292682926829268,
+        "mean_gold_size": 2.790243902439024,
+        "set_nll": 1.8654214102219684,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.7073170731707317,
+          0.824390243902439
+        ],
+        "nll_ci": [
+          1.768420866109482,
+          1.969408893368183
+        ]
+      }
+    },
+    "comparisons": {
+      "G1 ranking+true count vs best yes/no": {
+        "a": "pick+true_count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_exact",
+        "mean": 0.975609756097561,
+        "ci": [
+          -2.4390243902439024,
+          4.390243902439024
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": -4.390243902439024,
+        "ci": [
+          -7.804878048780488,
+          -1.951219512195122
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 76.58536585365854,
+        "ci": [
+          70.73170731707317,
+          82.4390243902439
+        ]
+      },
+      "S2 asked count vs true count (headroom)": {
+        "a": "pick+count",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -11.219512195121952,
+        "ci": [
+          -15.609756097560975,
+          -7.317073170731707
+        ]
+      },
+      "S5 dataset count prior vs true count (item-level counting headroom)": {
+        "a": "pick+dev_prior",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -25.365853658536587,
+        "ci": [
+          -31.23170731707317,
+          -19.51219512195122
+        ]
+      },
+      "S3 count dial on yes/no (ctx)": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_exact",
+        "mean": -6.829268292682928,
+        "ci": [
+          -11.219512195121952,
+          -2.4390243902439024
+        ]
+      },
+      "S3 count dial on yes/no (ctx), log-loss": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_nll",
+        "mean": 0.24042812203020897,
+        "ci": [
+          0.18037760718912624,
+          0.3023694423677452
+        ]
+      }
+    }
+  },
+  "unfair_tos": {
+    "n_dev": 234,
+    "n_test": 566,
+    "n_failed": 0,
+    "first_error": null,
+    "predictors": {
+      "noul_ctx@0.5": {
+        "n": 566,
+        "exact": 0.5212014134275619,
+        "example_f1": 0.5656065959952885,
+        "micro_f1": 0.2862903225806452,
+        "count_acc": 0.5229681978798587,
+        "mean_pred_size": 0.7491166077738516,
+        "mean_gold_size": 0.127208480565371,
+        "set_nll": 2.25963480085631,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.48056537102473496,
+          0.5618374558303887
+        ],
+        "nll_ci": [
+          2.171850410070241,
+          2.353194081746398
+        ]
+      },
+      "noul_ctx+platt": {
+        "n": 566,
+        "exact": 0.9240282685512368,
+        "example_f1": 0.9263839811542992,
+        "micro_f1": 0.6461538461538462,
+        "count_acc": 0.9240282685512368,
+        "mean_pred_size": 0.10247349823321555,
+        "mean_gold_size": 0.127208480565371,
+        "set_nll": 0.22858592543513004,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.9028268551236749,
+          0.9452296819787986
+        ],
+        "nll_ci": [
+          0.17130502938552272,
+          0.29159012230508635
+        ]
+      },
+      "always_none": {
+        "n": 566,
+        "exact": 0.8816254416961131,
+        "example_f1": 0.8816254416961131,
+        "micro_f1": 0.0,
+        "count_acc": 0.8816254416961131,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 0.127208480565371,
+        "exact_ci": [
+          0.8568462897526502,
+          0.9081272084805654
+        ]
+      },
+      "pick@top1": {
+        "n": 566,
+        "exact": 0.10424028268551237,
+        "example_f1": 0.10895170789163723,
+        "micro_f1": 0.1974921630094044,
+        "count_acc": 0.10954063604240283,
+        "mean_pred_size": 1.0,
+        "mean_gold_size": 0.127208480565371,
+        "exact_ci": [
+          0.07950530035335689,
+          0.12897526501766785
+        ]
+      },
+      "pick+true_count": {
+        "n": 566,
+        "exact": 0.991166077738516,
+        "example_f1": 0.9929328621908127,
+        "micro_f1": 0.9305555555555556,
+        "count_acc": 1.0,
+        "mean_pred_size": 0.127208480565371,
+        "mean_gold_size": 0.127208480565371,
+        "exact_ci": [
+          0.9823321554770318,
+          0.9982332155477032
+        ]
+      },
+      "noul_ctx+true_count": {
+        "n": 566,
+        "exact": 0.9893992932862191,
+        "example_f1": 0.991166077738516,
+        "micro_f1": 0.9166666666666666,
+        "count_acc": 1.0,
+        "mean_pred_size": 0.127208480565371,
+        "mean_gold_size": 0.127208480565371,
+        "exact_ci": [
+          0.980565371024735,
+          0.9964664310954063
+        ]
+      },
+      "pick+count": {
+        "n": 566,
+        "exact": 0.696113074204947,
+        "example_f1": 0.7335100117785629,
+        "micro_f1": 0.38968481375358166,
+        "count_acc": 0.696113074204947,
+        "mean_pred_size": 0.48939929328621906,
+        "mean_gold_size": 0.127208480565371,
+        "set_nll": 1.2081953977300088,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.6590106007067138,
+          0.7332155477031802
+        ],
+        "nll_ci": [
+          1.136334084155224,
+          1.2820015383329215
+        ]
+      },
+      "noul_ctx+count": {
+        "n": 566,
+        "exact": 0.7279151943462897,
+        "example_f1": 0.7610129564193169,
+        "micro_f1": 0.4110429447852761,
+        "count_acc": 0.7279151943462897,
+        "mean_pred_size": 0.44876325088339225,
+        "mean_gold_size": 0.127208480565371,
+        "set_nll": 1.2128596542741328,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.6925795053003534,
+          0.765017667844523
+        ],
+        "nll_ci": [
+          1.140498374214019,
+          1.2864705017756697
+        ]
+      },
+      "pick+dev_prior": {
+        "n": 566,
+        "exact": 0.8816254416961131,
+        "example_f1": 0.8816254416961131,
+        "micro_f1": 0.0,
+        "count_acc": 0.8816254416961131,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 0.127208480565371,
+        "set_nll": 0.4562286742108416,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.8568462897526502,
+          0.9081272084805654
+        ],
+        "nll_ci": [
+          0.3853859328678946,
+          0.5295858110388786
+        ]
+      },
+      "noul_ctx+dev_prior": {
+        "n": 566,
+        "exact": 0.8816254416961131,
+        "example_f1": 0.8816254416961131,
+        "micro_f1": 0.0,
+        "count_acc": 0.8816254416961131,
+        "mean_pred_size": 0.0,
+        "mean_gold_size": 0.127208480565371,
+        "set_nll": 0.46089293075496574,
+        "nll_coverage": 1.0,
+        "exact_ci": [
+          0.8568462897526502,
+          0.9081272084805654
+        ],
+        "nll_ci": [
+          0.3888363063176305,
+          0.5352284802618195
+        ]
+      }
+    },
+    "comparisons": {
+      "G1 ranking+true count vs best yes/no": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+platt",
+        "metric": "per_item_exact",
+        "mean": 6.713780918727916,
+        "ci": [
+          4.593639575971731,
+          8.8339222614841
+        ]
+      },
+      "R1 Choice ranking vs yes/no ranking (both told the count)": {
+        "a": "pick+true_count",
+        "b": "noul_ctx+true_count",
+        "metric": "per_item_exact",
+        "mean": 0.17667844522968199,
+        "ci": [
+          -0.35335689045936397,
+          0.88339222614841
+        ]
+      },
+      "C1 value of the right count over top-1": {
+        "a": "pick+true_count",
+        "b": "pick@top1",
+        "metric": "per_item_exact",
+        "mean": 88.69257950530034,
+        "ci": [
+          86.04240282685512,
+          91.34275618374559
+        ]
+      },
+      "S2 asked count vs true count (headroom)": {
+        "a": "pick+count",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -29.50530035335689,
+        "ci": [
+          -33.39222614840989,
+          -25.97173144876325
+        ]
+      },
+      "S5 dataset count prior vs true count (item-level counting headroom)": {
+        "a": "pick+dev_prior",
+        "b": "pick+true_count",
+        "metric": "per_item_exact",
+        "mean": -10.954063604240282,
+        "ci": [
+          -13.427561837455832,
+          -8.480565371024735
+        ]
+      },
+      "S3 count dial on yes/no (ctx)": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_exact",
+        "mean": 20.671378091872793,
+        "ci": [
+          17.486749116607776,
+          24.209363957597148
+        ]
+      },
+      "S3 count dial on yes/no (ctx), log-loss": {
+        "a": "noul_ctx+count",
+        "b": "noul_ctx@0.5",
+        "metric": "per_item_nll",
+        "mean": -1.0467751465821769,
+        "ci": [
+          -1.0945285461348044,
+          -0.9998950206055257
+        ]
+      }
+    }
+  }
+}
