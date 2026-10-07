@@ -57,9 +57,9 @@ No API key on this endpoint: the URL is unguessable but public while the app run
 
 ```bash
 VLLMSR_MODEL=vllm-sr/Vela-2.0-4B modal deploy cloud/vllmsr_serve.py   # prints https://<workspace>--bzaf-vllmsr-serve.modal.run
-URL=https://soufianedahimi01--bzaf-vllmsr-serve.modal.run
+URL=https://<workspace>--bzaf-vllmsr-serve.modal.run
 curl -L --max-time 1800 $URL/v1/models              # first start downloads the weights and checks their digests
-M=decision-2.0-nox-4b                                      # must match the served name (the repo name, lower case)
+M=vela-2.0-4b                                       # must match the served name (the repo name, lower case)
 uv run bzaf readout --items data/items/sata.jsonl --base-url $URL --model $M --out runs/e01/$M/sata.jsonl \
   --variants set,pick,count,noul_ctx --limit 20 --concurrency 8
 for d in sata goemotions unfair_tos synthetic; do
@@ -77,10 +77,9 @@ variant: it answers Choice, Noul and Score only). No API key on this endpoint: s
 
 - **Pilot first** (`--limit 20`): it prints seconds per item and the first error, if any.
 - **Stop apps when done** (`modal app stop <name>`). Kev's and Imajev's endpoints also scale to zero after 5 idle
-minutes, so a forgotten app costs little, but stopping is free.
+  minutes, so a forgotten app costs little, but stopping is free.
 - **Failed items are retried** automatically when you re-run the same command (e.g. timeouts during a cold start).
 - **One backend per result file.** Don't mix a Mac (MLX) run and a cloud (CUDA) run in the same `runs/` file; their
-probabilities differ slightly. Start the cloud run in a fresh file.
+  probabilities differ slightly. Start the cloud run in a fresh file.
 - **Watch spend** in the Modal dashboard (Usage). Expect a few dollars per 4B readout; the pilot's seconds per item ×
-items tells you the run length.
-
+  items tells you the run length.

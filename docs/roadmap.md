@@ -41,8 +41,8 @@ for a native multi-answer track to the benchmark maintainers.
 
 ## Paper outline (what each phase feeds)
 
-1. Finding: the count is the bottleneck for multi-answer questions, on the leading open decision models we measured
-   (E01, E01b).
+1. Finding: the count is the bottleneck for multi-answer questions, on the leading open decision models we measured,
+   including a released, trained native set head (E01, E01c, E01b).
 2. Method: count-conditioned set head, exact and single-pass; ablation vs per-option sigmoid (E02, E03).
 3. Data recipe: staged data with ablations (E03, E04).
 4. Benchmark: multi-answer track with set calibration, selective automation, order stability, and wide (200 options) /
