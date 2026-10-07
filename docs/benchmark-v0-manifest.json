@@ -120,6 +120,90 @@
         "5": 25,
         "6": 9
       }
+    },
+    "mmlu_pro": {
+      "file": "mmlu_pro.jsonl",
+      "items": 300,
+      "sha256": "f008a55398610d74c38fabec1b2da4a181c3be0fa9b170c4329033dd90e4723a",
+      "role": "general",
+      "about": "knowledge and reasoning, Choice, 3-10 options",
+      "options_mean": 9.5,
+      "options_max": 10,
+      "answers": {
+        "1": 300
+      }
+    },
+    "bbh": {
+      "file": "bbh.jsonl",
+      "items": 300,
+      "sha256": "fd61da94b4b97bf5aec33479bdee99f988d019feb6d0a0618eef81ce95358c80",
+      "role": "general",
+      "about": "BIG-Bench Hard, 23 fixed-answer tasks, Choice, 2-18 options",
+      "options_mean": 4.5,
+      "options_max": 18,
+      "answers": {
+        "1": 300
+      }
+    },
+    "anli": {
+      "file": "anli.jsonl",
+      "items": 300,
+      "sha256": "73e3ee0aee0dbdeaa9bc25becaaf35d1decbb5c3cfdca016030b8651c843374e",
+      "role": "general",
+      "about": "adversarial NLI, Choice, 3 options",
+      "options_mean": 3.0,
+      "options_max": 3,
+      "answers": {
+        "1": 300
+      }
+    },
+    "hellaswag": {
+      "file": "hellaswag.jsonl",
+      "items": 300,
+      "sha256": "b3c7df4453026072ead0741ee7cdabc01d175229789f47a163993d15c8f6e0c7",
+      "role": "general",
+      "about": "plausible continuation, Choice, 4 options",
+      "options_mean": 4.0,
+      "options_max": 4,
+      "answers": {
+        "1": 300
+      }
+    },
+    "clinc150": {
+      "file": "clinc150.jsonl",
+      "items": 300,
+      "sha256": "a746646e9a6516d8e6801287ea003071c0329022268defb1a3b95136a5cdcf62",
+      "role": "general",
+      "about": "intents incl. out-of-scope, Choice, 151 options",
+      "options_mean": 151.0,
+      "options_max": 151,
+      "answers": {
+        "1": 300
+      }
+    },
+    "boolq": {
+      "file": "boolq.jsonl",
+      "items": 300,
+      "sha256": "ede635bd986d2a665a65785e152da7382a58ac97371fdabaf92ebb435716dcbc",
+      "role": "general",
+      "about": "yes/no questions about a passage, Noul",
+      "options_mean": 2.0,
+      "options_max": 2,
+      "answers": {
+        "1": 300
+      }
+    },
+    "sst5": {
+      "file": "sst5.jsonl",
+      "items": 300,
+      "sha256": "5266faed44ce4f18d8ac805aeb6c70e900254cb467d89e49d0db834e7f329ee4",
+      "role": "general",
+      "about": "sentiment level, Score, 5 levels",
+      "options_mean": 5.0,
+      "options_max": 5,
+      "answers": {
+        "1": 300
+      }
     }
   },
   "order": {
