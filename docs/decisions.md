@@ -97,3 +97,16 @@ because the hard requirements (200 options, 8k tokens) need such data.
 ## D15 — Budget released in phase gates (2026-10-06)
 Total ceiling about $300–400 (GPU + teacher APIs), committed phase by phase and only after the previous gate passes.
 Planned envelopes in [roadmap.md](roadmap.md). Each run logs its cost; overruns of more than 50 % stop and re-plan.
+
+## D16 — Release order: 4B first, 9B second; own trainer with base adapters (2026-10-07)
+Ship a 4B v0.1 as soon as E03 passes, then the 9B. Reason: speed matters in a field that changes weekly, and most
+attention goes to "best at 4B" results; the 9B follows with data v2.
+Trainer (confirms D11): our own training loop, with one small **adapter per base family** that knows how to load the
+checkpoint, render inputs in that family's format, and find the option and decision positions. The Kev adapter imports
+Kev's own encoding code as a library (no fork), so continued training sees exactly the format Kev was trained on.
+The count head is retrained with each base; what transfers between families is the code and the recipe, not weights.
+
+## D17 — Model study scoped to a handful of leading models (2026-10-07)
+Instead of benchmarking every open decision model: Kev, Imajev (both done in E01) and Decision 2.0 (needed anyway
+for the base-family choice), optionally one more if cheap. Claim phrased accordingly: "the leading open decision
+models we measured", with N stated.
