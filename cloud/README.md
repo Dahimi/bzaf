@@ -56,8 +56,8 @@ No API key on this endpoint: the URL is unguessable but public while the app run
 ### vLLM Semantic Router models (Vela 2.0, Decision 2.0)
 
 ```bash
-VLLMSR_MODEL=vllm-sr/Vela-2.0-4B modal deploy cloud/vllmsr_serve.py   # prints https://<workspace>--bzaf-vllmsr-serve.modal.run
-URL=https://<workspace>--bzaf-vllmsr-serve.modal.run
+VLLMSR_MODEL=vllm-sr/Vela-2.0-4B modal deploy cloud/vllmsr_serve.py   # prints https://<workspace>--bzaf-vela-2-0-4b-serve.modal.run
+URL=https://<workspace>--bzaf-vela-2-0-4b-serve.modal.run
 curl -L --max-time 1800 $URL/v1/models              # first start downloads the weights and checks their digests
 M=vela-2.0-4b                                       # must match the served name (the repo name, lower case)
 uv run bzaf readout --items data/items/sata.jsonl --base-url $URL --model $M --out runs/e01/$M/sata.jsonl \
@@ -67,7 +67,7 @@ for d in sata goemotions unfair_tos synthetic; do
     --variants set,pick,count,noul_ctx --concurrency 8
 done
 uv run bzaf score runs/e01/$M/*.jsonl --out experiments/E01c-native-set/results/$M
-modal app stop bzaf-vllmsr
+modal app stop bzaf-vela-2-0-4b
 ```
 
 Decision 2.0 the same way with `VLLMSR_MODEL=vllm-sr/Decision-2.0-Nox-4B` and `M=decision-2.0-nox-4b` (no `set`

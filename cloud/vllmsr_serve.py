@@ -1,8 +1,8 @@
 """vLLM Semantic Router models (Vela 2.0, Decision 2.0) behind their own /v1/systemone endpoint on Modal, for readouts.
 
-    VLLMSR_MODEL=vllm-sr/Vela-2.0-4B modal deploy cloud/vllmsr_serve.py   # -> https://<workspace>--bzaf-vllmsr-serve.modal.run
+    VLLMSR_MODEL=vllm-sr/Vela-2.0-4B modal deploy cloud/vllmsr_serve.py   # -> https://<workspace>--bzaf-vela-2-0-4b-serve.modal.run
     curl -L --max-time 1800 <url>/v1/models                                # wait for the cold start (first time downloads ~9 GB)
-    modal app stop bzaf-vllmsr                                             # take it down when the readout is done
+    modal app stop bzaf-vela-2-0-4b                                        # take it down when the readout is done
 
 It runs the team's own runtime, `vllm-srun` (github.com/vllm-project/semantic-router, src/model-runtime, Apache-2.0),
 installed from a pinned commit. Built-in models are pinned there by revision and file digests and checked before load,
@@ -40,7 +40,8 @@ image = (
           "VLLMSR_MODEL": MODEL, "VLLMSR_PROFILE": PROFILE, "BZAF_GPU": ",".join(GPU)})
 )
 cache = modal.Volume.from_name("bzaf-model-cache", create_if_missing=True)
-app = modal.App("bzaf-vllmsr")
+APP = "bzaf-" + MODEL.split("/")[-1].lower().replace(".", "-")   # one app per model, so several can run at once
+app = modal.App(APP)
 
 
 @app.function(image=image, gpu=GPU, volumes={"/cache": cache}, cpu=4, memory=32768, timeout=3600, scaledown_window=300)
