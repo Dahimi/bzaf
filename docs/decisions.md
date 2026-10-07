@@ -78,6 +78,7 @@ found). Imajev-9B is excluded by the hard requirements (8 questions per request,
 E01b compares them on general decision quality (same harness for both), multi-answer, a 200-option / 8k-token probe,
 and forgetting after a short LoRA run, with a rule written before it runs.
 Hard requirements for the release model: up to 200 options per question and 8k tokens of input.
+*Amended by D18: the comparison is made at 4B first (Kev-4B vs Nox-4B), and repeated at 9B before E04.*
 
 ## D13 — Data: staged plan, hosted open-weight teachers (2026-10-06)
 Data stages: A breadth (public multi-answer and single-answer sets), B free augmentation, C mined hard cases,
@@ -110,3 +111,21 @@ The count head is retrained with each base; what transfers between families is t
 Instead of benchmarking every open decision model: Kev, Imajev (both done in E01) and Decision 2.0 (needed anyway
 for the base-family choice), optionally one more if cheap. Claim phrased accordingly: "the leading open decision
 models we measured", with N stated.
+
+## D18 — Base family chosen at 4B, before E03 (2026-10-07)
+Because the 4B ships first (D16), the family choice (Kev or Decision 2.0) moves before E03 and is made at 4B:
+Kev-4B vs Nox-4B. Kev-9B vs Lux-9B is checked with the same rule before E04; if it disagrees, the 9B may switch family
+(one more adapter). E02 stays on Kev-0.8B either way. Both families go through the same harness: Decision 2.0's runtime
+(`vllm-srun`) serves `/v1/systemone`, like Kev's server.
+*Rule (details pre-registered in E01b):* switch to Decision 2.0 only if Nox-4B
+1. beats Kev-4B on general decision quality (the same fixed, stratified Decision Index sample, run with the Decision
+   Index's own harness) with the paired 95 % CI above 0, and is not clearly worse on multi-answer ranking (benchmark
+   v0, ranking + true count: the paired CI must not lie entirely below 0); and
+2. passes a trainability check: through our trainer's Decision 2.0 adapter, a short LoRA run with the count head and a
+   self-distillation loss (KL to its own original answers, because its training data is not public) loses at most
+   1 point on the general sample.
+
+Step 2 runs only if step 1 passes. Otherwise Kev.
+*Why:* Kev's training data and format code are open, so continued training can replay its data and see its exact
+format. Decision 2.0 is ahead on the leaderboard but offers neither, so it must win clearly to be worth that risk.
+The same readouts are the model study (D17).

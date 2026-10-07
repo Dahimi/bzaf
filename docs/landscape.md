@@ -4,6 +4,9 @@
 "Verified" means read in a primary source (repository or paper text); "reported" means seen only in search results
 or secondary write-ups.*
 
+*Updated 7 October 2026: Decision 2.0 serving and Vela 2.0, verified in the
+[vllm-project/semantic-router](https://github.com/vllm-project/semantic-router) repository at commit `246dde1`.*
+
 ## Jev (TypeSafe AI)
 
 - Launched 15 September 2026; closed, hosted. Primitives: Choice (one of up to 255 options), Score (ordered rubric),
@@ -50,13 +53,14 @@ the number of answers (count bias); the Choice Funnel decoding adds up to +29 po
 | [Imajev](https://github.com/mohit67890/imajev) | Qwen3.5 2B/4B/9B LoRA r64; Apache-2.0 | 256-code readout (255 options + unknown) | ~867k decisions: public human-labelled + own 9B labels | #1 JevBench v1.4.2.2. Strongest challenger. |
 | [JevK5](https://github.com/allebee/jevk5) / Plumb-4B | Qwen3.5-4B/9B; Apache-2.0 | answer-letter next-token logits | distilled from Qwen3.6-27B **and GPT-6 Luna** | Lineage risk (teacher terms). |
 | [Winnow-12B](https://huggingface.co/EldanRing/Winnow-12B) | Gemma-4-12B-IT LoRA (merged); Apache-2.0 | — | private dataset, unnamed teacher | Top Intelligence on JevBench v1.5; too big to train on 18 GB. |
-| [Decision 2.0](https://huggingface.co/collections/vllm-sr/decision-20) | Kai 0.6B, Eos 0.8B, Sol 2B, Nox 4B, Lux 9B, Vega 27B; Apache-2.0 | encoder (Kai); Qwen3.5 + shared candidate head (others) | not yet checked | vLLM Semantic Router team. Vega 56.47 on the Decision Index (#3). |
+| [Decision 2.0](https://huggingface.co/collections/vllm-sr/decision-20) | Kai 0.6B (Qwen3), Eos 0.8B, Sol 2B, Nox 4B, Lux 9B, Vega 27B (Qwen3.5); Apache-2.0 | candidate head over the options | not yet checked; no public training code for these models found | vLLM Semantic Router team. Served by `vllm-srun` (in their repo, Apache-2.0) at `/v1/systemone`: Choice, Noul, Score, 2–255 options. *Verified.* Vega 56.47 on the Decision Index (#3). |
+| Vela 2.0 | 0.3B (ModernBERT); 0.8B, 4B, 9B built on Decision 2.0 Eos, Nox, Lux | Choice, Noul, Score, plus **Set** (one sigmoid per option, threshold from the request or the package) and Span | private preview: the weights are not public | Same team. Its Set type is our "count head off" ablation (direction 2), shipped. *Verified from the runtime code only.* |
 | Laya, Von, GLiClass, GLiNER2 | ModernBERT / mmBERT encoders | label scoring | varies | GLiClass already does multi-label with labels in context (direction 2 exists). |
 
 Multi-answer in the ecosystem today: LLEV `multi` (one yes/no pass per option); Imajev `multi` (serving-only fan-out
 to one yes/no per label, threshold 0.5, up to 32 labels); Haste Jev `set_choice` (research
-prototype); JevK5-Lite sigmoid heads (encoder only). **Nobody returns calibrated answer-set probabilities or honours
-count constraints.**
+prototype); JevK5-Lite sigmoid heads (encoder only); Vela 2.0 `set` (private preview: one sigmoid per option,
+thresholded). **As far as found, nobody returns calibrated answer-set probabilities or honours count constraints.**
 
 ## Prior art (cited from the literature, not re-fetched)
 

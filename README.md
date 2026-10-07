@@ -18,10 +18,10 @@ options apply; together they define an exact distribution over answer sets
 | Phase | State |
 |---|---|
 | 1. Readout baselines on existing models ([E01](experiments/E01-readout-baselines/)) | ✅ done: count is the bottleneck (G1 passed); base = Kev |
-| 2. Count head on Kev-0.8B ([E02](experiments/E02-count-head/)) + release-base comparison (E01b) | **next** |
-| 3. Data v1 + E03 at 4B on the release base | planned |
-| 4. Data v2 + E04: 9B release candidate | planned |
-| 5. Release 9B + 4B, paper, benchmark track | planned |
+| 2. Benchmark v0 + base-family check and model study (E01b), alongside the count head on Kev-0.8B ([E02](experiments/E02-count-head/)) | **next** |
+| 3. Data v1 + E03 at 4B on the chosen family, then release v0.1 (4B) | planned |
+| 4. Data v2 + E04: 9B | planned |
+| 5. Release the 9B, paper, benchmark track | planned |
 
 ## Documentation
 
