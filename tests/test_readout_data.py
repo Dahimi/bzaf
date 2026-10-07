@@ -23,6 +23,11 @@ class FakeClient(DecisionClient):
             if q["type"] == "noul":
                 opt = q["instructions"].rsplit("Option: ", 1)[1]
                 answers[key] = {"type": "noul", "noul": 0.9 if opt in gold_opts else 0.1}
+            elif q["type"] == "set":
+                names = list(q["criteria"])
+                sets = {key: {"selected": [n for n in names if n in gold_opts],
+                              "probabilities": {n: 0.8 if n in gold_opts else 0.2 for n in names}}}
+                return {"answers": answers, "sets": sets, "thresholds": {key: 0.5}}
             elif key == "pick":
                 names = list(q["criteria"])
                 w = np.array([3.0 if n in gold_opts else 1.0 for n in names]); w /= w.sum()
@@ -91,3 +96,19 @@ def test_failed_items_are_retried_without_duplicates(tmp_path):
     recs = [json.loads(line) for line in out.read_text().splitlines()]
     assert len(recs) == 10 and not any("error" in r for r in recs)
     assert {r["id"] for r in recs} == {it.id for it in items}
+
+
+def test_native_set_variant_reads_probabilities_and_threshold(tmp_path):
+    from bzaf.predictors import ShippedThreshold
+    from bzaf.score import score_records
+
+    items = load_synthetic(n=40, seed=5)
+    gold_by_state = {json.dumps(it.state, sort_keys=True): {it.options[j] for j in it.gold} for it in items}
+    out = tmp_path / "set.jsonl"
+    run_readout(FakeClient(gold_by_state, []), items, out, variants=["set"], log=lambda *_: None)
+    recs = [json.loads(line) for line in out.read_text().splitlines()]
+    assert all("set" in r and r["set_threshold"] == 0.5 for r in recs)
+    for r in recs:
+        assert ShippedThreshold().predict(r).subset == set(r["gold"])
+    rows = score_records(recs)["synthetic"]["predictors"]
+    assert rows["set@shipped"]["exact"] == 1.0 and "set+true_count" in rows

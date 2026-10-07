@@ -54,5 +54,5 @@ for a native multi-answer track to the benchmark maintainers.
 - Licence check for every training dataset and every teacher model before use (data.md register).
 - Decision 2.0 lineage: confirm whether a teacher model was used for its training data.
 - Which hosted provider(s) for teachers; confirm their terms allow training on outputs.
-- Vela 2.0 (same team as Decision 2.0, private preview) has a native Set type (one sigmoid per option, thresholded):
-  add it to the model study once it is public ([landscape.md](landscape.md)).
+- Vela 2.0 (same team as Decision 2.0, released 2026-10-06) has a native Set type (one sigmoid per option,
+  thresholded): measured first in [E01c](../experiments/E01c-native-set/), then in the model study on benchmark v0.

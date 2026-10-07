@@ -84,6 +84,19 @@ class Independent(Predictor):
         return Prediction(set(dist.mode()), dist)
 
 
+class ShippedThreshold(Predictor):
+    """A native multi-answer type as its server ships it: keep options whose probability is above the server's own
+    threshold (recorded with the readout). The set distribution is the independent product shifted so its mode is that
+    thresholded set."""
+
+    def __init__(self, field: str = "set"):
+        self.field, self.needs, self.name = field, (field, f"{field}_threshold"), f"{field}@shipped"
+
+    def predict(self, rec):
+        dist = SetDistribution(logit(rec[self.field]) - logit([rec[f"{self.field}_threshold"]])[0])
+        return Prediction(set(dist.mode()), dist)
+
+
 class ChoiceTop1(Predictor):
     """Today's single-answer Choice: always exactly one option."""
     name, needs = "pick@top1", ("pick",)
@@ -179,4 +192,8 @@ def default_predictors() -> list[Predictor]:
         ScoresPlusCount("noul_ctx"),
         ScoresPlusDevPrior("pick"),
         ScoresPlusDevPrior("noul_ctx"),
+        ShippedThreshold("set"),
+        Independent("set", calibrate=True),
+        OracleCount("set"),
+        ScoresPlusDevPrior("set"),
     ]

@@ -54,13 +54,13 @@ the number of answers (count bias); the Choice Funnel decoding adds up to +29 po
 | [JevK5](https://github.com/allebee/jevk5) / Plumb-4B | Qwen3.5-4B/9B; Apache-2.0 | answer-letter next-token logits | distilled from Qwen3.6-27B **and GPT-6 Luna** | Lineage risk (teacher terms). |
 | [Winnow-12B](https://huggingface.co/EldanRing/Winnow-12B) | Gemma-4-12B-IT LoRA (merged); Apache-2.0 | — | private dataset, unnamed teacher | Top Intelligence on JevBench v1.5; too big to train on 18 GB. |
 | [Decision 2.0](https://huggingface.co/collections/vllm-sr/decision-20) | Kai 0.6B (Qwen3), Eos 0.8B, Sol 2B, Nox 4B, Lux 9B, Vega 27B (Qwen3.5); Apache-2.0 | candidate head over the options | not yet checked; no public training code for these models found | vLLM Semantic Router team. Served by `vllm-srun` (in their repo, Apache-2.0) at `/v1/systemone`: Choice, Noul, Score, 2–255 options. *Verified.* Vega 56.47 on the Decision Index (#3). |
-| Vela 2.0 | 0.3B (ModernBERT); 0.8B, 4B, 9B built on Decision 2.0 Eos, Nox, Lux | Choice, Noul, Score, plus **Set** (one sigmoid per option, threshold from the request or the package) and Span | private preview: the weights are not public | Same team. Its Set type is our "count head off" ablation (direction 2), shipped. *Verified from the runtime code only.* |
+| [Vela 2.0](https://huggingface.co/collections/vllm-sr/vela-20) (released 2026-10-06) | 0.3B (ModernBERT, from Decision-1.0-Kai); 0.8B, 4B, 9B fully fine-tuned from Decision 2.0 Eos, Nox, Lux; Apache-2.0 | Choice, Noul, Score, plus **Set** (candidate head + scalar bias, one independent sigmoid per label, threshold from the request or the package) and **Span** (word × label grid) | routing recipe: long-document PII, synthetic router decisions (Qwen3-30B-A3B, kept when a blind re-label agrees), Decision 1.0 sources, safety sets, hallucination spans, Decision 2.0 replay with a KL term | Same team; focus is routing, safety and spans. Set is our "count head off" design (direction 2), shipped. No multi-answer benchmark reported. General decisions drop: Decision Index 0.2.1 31.63 for 4B vs 42.55 for Nox-4B (74 % kept), 41.09 for 9B vs 46.23 (89 %). *Verified (blog source and runtime code in their repo).* |
 | Laya, Von, GLiClass, GLiNER2 | ModernBERT / mmBERT encoders | label scoring | varies | GLiClass already does multi-label with labels in context (direction 2 exists). |
 
 Multi-answer in the ecosystem today: LLEV `multi` (one yes/no pass per option); Imajev `multi` (serving-only fan-out
 to one yes/no per label, threshold 0.5, up to 32 labels); Haste Jev `set_choice` (research
-prototype); JevK5-Lite sigmoid heads (encoder only); Vela 2.0 `set` (private preview: one sigmoid per option,
-thresholded). **As far as found, nobody returns calibrated answer-set probabilities or honours count constraints.**
+prototype); JevK5-Lite sigmoid heads (encoder only); Vela 2.0 `set` (released 2026-10-06: one sigmoid per label,
+thresholded; per-label probabilities, no set probability, no count). **As far as found, nobody returns calibrated answer-set probabilities or honours count constraints.**
 
 ## Prior art (cited from the literature, not re-fetched)
 

@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--base-url", required=True, help="e.g. http://localhost:8000 (a TypeSafe-compatible server)")
     r.add_argument("--model", required=True, help="name recorded in the output, and sent as the request's model")
     r.add_argument("--out", required=True)
-    r.add_argument("--variants", default="noul,noul_ctx,pick,count")
+    r.add_argument("--variants", default="noul,noul_ctx,pick,count", help="comma list of noul,noul_ctx,pick,count,set")
     r.add_argument("--max-questions", type=int, default=64, help="questions per request (chunked above this)")
     r.add_argument("--limit", type=int, default=None)
     r.add_argument("--concurrency", type=int, default=1, help="items in flight at once (use 8-32 against a GPU server, 1 on a Mac)")

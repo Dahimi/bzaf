@@ -53,6 +53,26 @@ modal app stop bzaf-imajev
 
 No API key on this endpoint: the URL is unguessable but public while the app runs, so stop it when done.
 
+### vLLM Semantic Router models (Vela 2.0, Decision 2.0)
+
+```bash
+VLLMSR_MODEL=vllm-sr/Vela-2.0-4B modal deploy cloud/vllmsr_serve.py   # prints https://<workspace>--bzaf-vllmsr-serve.modal.run
+URL=https://<workspace>--bzaf-vllmsr-serve.modal.run
+curl -L --max-time 1800 $URL/v1/models              # first start downloads the weights and checks their digests
+M=vela-2.0-4b                                       # must match the served name (the repo name, lower case)
+uv run bzaf readout --items data/items/sata.jsonl --base-url $URL --model $M --out runs/e01/$M/sata.jsonl \
+  --variants set,pick,count,noul_ctx --limit 20 --concurrency 8
+for d in sata goemotions unfair_tos synthetic; do
+  uv run bzaf readout --items data/items/$d.jsonl --base-url $URL --model $M --out runs/e01/$M/$d.jsonl \
+    --variants set,pick,count,noul_ctx --concurrency 8
+done
+uv run bzaf score runs/e01/$M/*.jsonl --out experiments/E01c-native-set/results/$M
+modal app stop bzaf-vllmsr
+```
+
+Decision 2.0 the same way with `VLLMSR_MODEL=vllm-sr/Decision-2.0-Nox-4B` and `M=decision-2.0-nox-4b` (no `set`
+variant: it answers Choice, Noul and Score only). No API key on this endpoint: stop the app when done.
+
 ## Good habits
 
 - **Pilot first** (`--limit 20`): it prints seconds per item and the first error, if any.

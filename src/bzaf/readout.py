@@ -8,6 +8,8 @@ Per item, four variants (all in the same request where possible; the questions a
             "options see each other", direction 2)
   pick      one Choice over all options (its ranking feeds the count approach)
   count     one Choice: "how many of these options apply?", answers 0..K
+  set       one native multi-answer question (type "set", e.g. Vela 2.0): one probability per option plus the server's
+            own threshold. Opt-in (not in VARIANTS): only servers that declare the type accept it.
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ from .client import DecisionClient
 from .schema import Item
 
 VARIANTS = ("noul", "noul_ctx", "pick", "count")
+ALL_VARIANTS = VARIANTS + ("set",)
 
 
 def _listing(options: list[str]) -> str:
@@ -50,12 +53,14 @@ def build_questions(item: Item, variants: Iterable[str] = VARIANTS) -> dict[str,
     if "count" in variants:
         out["count"] = {"type": "choice", "instructions": f"{q}\nOptions:\n{_listing(opts)}\n\nHow many of these options apply?",
                         "criteria": {str(n): count_label(n, k) for n in range(k + 1)}}
+    if "set" in variants:
+        out["set"] = {"type": "set", "instructions": f"{q}\nSelect every option that applies.", "criteria": {o: None for o in opts}}
     return out
 
 
-def parse_answers(item: Item, answers: dict) -> dict[str, list[float]]:
+def parse_answers(item: Item, answers: dict, sets: dict | None = None, thresholds: dict | None = None) -> dict:
     k = len(item.options)
-    rec: dict[str, list[float]] = {}
+    rec: dict = {}
     if "noul_0" in answers:
         rec["noul"] = [float(answers[f"noul_{j}"]["noul"]) for j in range(k)]
     if "noulctx_0" in answers:
@@ -66,6 +71,11 @@ def parse_answers(item: Item, answers: dict) -> dict[str, list[float]]:
     if "count" in answers:
         p = answers["count"]["probabilities"]
         rec["count"] = [float(p[str(n)]) for n in range(k + 1)]
+    if sets and "set" in sets:
+        p = sets["set"]["probabilities"]
+        rec["set"] = [float(p[o]) for o in item.options]
+        if thresholds and "set" in thresholds:
+            rec["set_threshold"] = float(thresholds["set"])
     return rec
 
 
@@ -73,12 +83,17 @@ def read_item(client: DecisionClient, item: Item, variants: Iterable[str] = VARI
     questions = build_questions(item, variants)
     keys = list(questions)
     answers: dict = {}
+    sets: dict = {}
+    thresholds: dict = {}
     t0 = time.perf_counter()
     for i in range(0, len(keys), max_questions):  # isolation makes chunking exact: same state, independent questions
         chunk = {key: questions[key] for key in keys[i : i + max_questions]}
-        answers.update(client.decide(item.state, chunk)["answers"])
+        resp = client.decide(item.state, chunk)
+        answers.update(resp["answers"])
+        sets.update(resp.get("sets") or {})
+        thresholds.update(resp.get("thresholds") or {})
     rec = {"id": item.id, "dataset": item.dataset, "model": client.model, "k": len(item.options), "gold": item.gold}
-    rec.update(parse_answers(item, answers))
+    rec.update(parse_answers(item, answers, sets, thresholds))
     rec["latency_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     return rec
 

@@ -53,16 +53,20 @@ def score_records(records: list[dict], dev_frac: float = 0.3) -> dict:
 def comparisons(rows: dict) -> dict:
     """The E01 signals: (name, a, b) -> mean of a - b on test items, with CI. Exact-set accuracy in points."""
     out = {}
-    nouls = [n for n in ("noul@0.5", "noul+platt", "noul_ctx@0.5", "noul_ctx+platt") if n in rows]
-    if not nouls:
-        return out
-    best_noul = max(nouls, key=lambda n: rows[n]["exact"])
 
     def diff(key, a, b, metric="per_item_exact", scale=100.0):
         if a in rows and b in rows and metric in rows[a] and metric in rows[b]:
             mean, lo, hi = paired_diff_ci(rows[a][metric], rows[b][metric])
             out[key] = {"a": a, "b": b, "metric": metric, "mean": mean * scale, "ci": (lo * scale, hi * scale)}
 
+    # native multi-answer type (E01c): is its count the bottleneck, and does its ranking match Choice's?
+    diff("V1 native set as shipped vs its ranking + true count", "set@shipped", "set+true_count")
+    diff("V2 Choice ranking vs native-set ranking (both told the count)", "pick+true_count", "set+true_count")
+    diff("V3 dataset count prior on native-set scores vs shipped threshold", "set+dev_prior", "set@shipped")
+    nouls = [n for n in ("noul@0.5", "noul+platt", "noul_ctx@0.5", "noul_ctx+platt") if n in rows]
+    if not nouls:
+        return out
+    best_noul = max(nouls, key=lambda n: rows[n]["exact"])
     diff("G1 ranking+true count vs best yes/no", "pick+true_count", best_noul)
     diff("R1 Choice ranking vs yes/no ranking (both told the count)", "pick+true_count", "noul_ctx+true_count")
     diff("C1 value of the right count over top-1", "pick+true_count", "pick@top1")
