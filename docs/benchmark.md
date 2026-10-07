@@ -16,9 +16,9 @@ long inputs. v0 is the smallest benchmark that measures all of that, built from 
 |---|---|---|---|---|---|---|
 | `sata` | headline | 1,650 (all) | 9.4 / 16 | 2–11 | exam-style knowledge questions; comparable with the SATA-Bench paper | SATA-Bench @371dd0c, MIT |
 | `goemotions` | headline | 600 | 28 / 28 | 1–3 | emotions in Reddit comments; over-selection | GoEmotions test @e49bbfe, Apache-2.0 |
-| `unfair_tos` | headline | 800 | 8 / 8 | 0–3, mostly 0 | unfair clauses in terms of service; "none" | LexGLUE UNFAIR-ToS test, CC BY 4.0 |
+| `unfair_tos` | headline | 800 | 8 / 8 | 0–2, 89 % none | unfair clauses in terms of service; "none" | LexGLUE UNFAIR-ToS test, CC BY 4.0 |
 | `nlupp` | headline | 600 | 45 / 48, with descriptions | 0–6 | intents in customer messages (banking, hotels) | NLU++ @57ec275, CC BY 4.0 |
-| `ecthr` | headline | 300 | 10 / 10 | see manifest | violated articles from court case facts; long inputs (cut to ~6k tokens) | LexGLUE ECtHR-A test (HUDOC) |
+| `ecthr` | headline | 300 | 10 / 10 | 0–4, mostly 1 | violated articles from court case facts; long inputs (cut to ~6k tokens) | LexGLUE ECtHR-A test (HUDOC) |
 | `synthetic` | headline | 300 | 7 / 10 | 0–7 | statements about a JSON order; exact gold, linked options | ours |
 | `wide` | probe | 300 (75 × K) | K = 10, 50, 100, 200 | 0–6 | products in an order: cost and quality against the number of options | ours |
 | `order` | robustness | 300 | as source | as source | 100 items each of `sata`, `goemotions`, `nlupp`, options shuffled | — |
