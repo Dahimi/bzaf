@@ -10,6 +10,8 @@ Per item, four variants (all in the same request where possible; the questions a
   count     one Choice: "how many of these options apply?", answers 0..K
   set       one native multi-answer question (type "set", e.g. Vela 2.0): one probability per option plus the server's
             own threshold. Opt-in (not in VARIANTS): only servers that declare the type accept it.
+  native    single-answer items (general track): the question asked in its own type, meta.qtype = choice, noul or
+            score; the answer's probabilities are recorded per option.
 """
 from __future__ import annotations
 
@@ -23,7 +25,7 @@ from .client import DecisionClient
 from .schema import Item
 
 VARIANTS = ("noul", "noul_ctx", "pick", "count")
-ALL_VARIANTS = VARIANTS + ("set",)
+ALL_VARIANTS = VARIANTS + ("set", "native")
 
 
 def _listing(options: list[str], descriptions: list[str] | None = None) -> str:
@@ -65,6 +67,14 @@ def build_questions(item: Item, variants: Iterable[str] = VARIANTS) -> dict[str,
                         "criteria": {str(n): count_label(n, k) for n in range(k + 1)}}
     if "set" in variants:
         out["set"] = {"type": "set", "instructions": f"{q}\nSelect every option that applies.", "criteria": dict(zip(opts, ds))}
+    if "native" in variants:
+        qtype = item.meta.get("qtype", "choice")
+        if qtype == "noul":
+            out["native"] = {"type": "noul", "instructions": q}
+        elif qtype == "score":
+            out["native"] = {"type": "score", "instructions": q, "criteria": list(opts)}
+        else:
+            out["native"] = {"type": "choice", "instructions": q, "criteria": dict(zip(opts, ds))}
     return out
 
 
@@ -81,6 +91,14 @@ def parse_answers(item: Item, answers: dict, sets: dict | None = None, threshold
     if "count" in answers:
         p = answers["count"]["probabilities"]
         rec["count"] = [float(p[str(n)]) for n in range(k + 1)]
+    if "native" in answers:
+        a, qtype = answers["native"], item.meta.get("qtype", "choice")
+        if qtype == "noul":
+            rec["native"] = [1.0 - float(a["noul"]), float(a["noul"])]  # options are ["no", "yes"]
+        else:
+            p = a["probabilities"]
+            keys = [str(j) for j in range(k)] if qtype == "score" and str(0) in p else item.options
+            rec["native"] = [float(p[key]) for key in keys]
     if sets and "set" in sets:
         p = sets["set"]["probabilities"]
         rec["set"] = [float(p[o]) for o in item.options]

@@ -14,15 +14,15 @@
 - Models, each served by its own runtime on Modal ([cloud/README.md](../../cloud/README.md)): `kev-4b`,
   `decision-2.0-nox-4b`, `vela-2.0-4b` (with `--with-set`), optionally `imajev-4b` (`--max-questions 8`; its 128-
   character option-name limit fails some lettered SATA items, which then count as wrong and are reported).
-- Part 2 (general quality): one fixed Decision Index 0.3 sample, `suite sample --n 4000` with its default seed, run
-  with the Decision Index's own `http` engine against the same Kev-4B and Nox-4B endpoints. Building the suite once is
-  a ~7 GB download (accept the HLE terms on the Hub first); see the Decision Index README.
+- Part 2 (general quality): the public Decision Index 0.3 board (the maintainers' full run), not a local sample
+  (changed before any run, [D19](../../docs/decisions.md)). Board snapshot 2026-10-07: Nox-4B 45.0, Kev-4B 39.5 (v2).
+  The benchmark's general track is read out too, for the record and as the baseline for later no-regression checks.
 
 Commands, per model `M` at endpoint `URL`:
 
 ```bash
 uv run bzaf bench readout --base-url $URL --model $M --limit 5           # pilot
-uv run bzaf bench readout --base-url $URL --model $M --concurrency 16    # add --with-set for Vela
+uv run bzaf bench readout --base-url $URL --model $M --concurrency 16    # add --with-set for Vela; includes the general track
 uv run bzaf bench score runs/bench-v0/$M --out experiments/E01b-family-check/results/$M
 uv run bzaf bench compare runs/bench-v0/decision-2.0-nox-4b runs/bench-v0/kev-4b --predictor pick+true_count \
   > experiments/E01b-family-check/results/nox-vs-kev-ranking.md
@@ -32,8 +32,9 @@ uv run bzaf bench compare runs/bench-v0/decision-2.0-nox-4b runs/bench-v0/kev-4b
 
 Switch the family to Decision 2.0 only if **all** of these hold; otherwise stay with Kev.
 
-1. **General quality:** Nox-4B − Kev-4B on the Decision Index sample, scored by the Decision Index's own scorer: the
-   paired 95 % CI (bootstrap over the sampled request groups) lies above 0.
+1. **General quality:** Nox-4B − Kev-4B on the public Decision Index 0.3 board (full index) is larger than the board's
+   own tie threshold, 0.9 points. *Snapshot: +5.5 (45.0 vs 39.5), so this condition holds unless the name mapping
+   turns out wrong.*
 2. **Multi-answer ranking:** Nox-4B − Kev-4B, exact-set of `pick+true_count` (the ranking our count head builds on),
    macro average over the headline tracks of benchmark v0: the paired 95 % CI does not lie entirely below 0.
 3. **Trainability** (only run if 1 and 2 pass): a short LoRA run of Nox-4B with the count head and self-distillation

@@ -97,6 +97,20 @@ class ShippedThreshold(Predictor):
         return Prediction(set(dist.mode()), dist)
 
 
+class NativeTop1(Predictor):
+    """Single-answer items (general track): the model's own answer, i.e. the most likely option of the question asked
+    in its own type. Its distribution puts the count at exactly 1, so set log-loss is the usual log-loss, exact-set
+    accuracy is accuracy, and the predicted set's probability is the answer's confidence."""
+    name, needs = "native@top1", ("native",)
+
+    def predict(self, rec):
+        p = np.asarray(rec["native"], dtype=float)
+        count = np.zeros(len(p) + 1)
+        count[1] = 1.0
+        dist = SetDistribution.from_scores(p / p.sum(), count)
+        return Prediction({int(np.argmax(p))}, dist)
+
+
 class ChoiceTop1(Predictor):
     """Today's single-answer Choice: always exactly one option."""
     name, needs = "pick@top1", ("pick",)
@@ -192,6 +206,7 @@ def default_predictors() -> list[Predictor]:
         ScoresPlusCount("noul_ctx"),
         ScoresPlusDevPrior("pick"),
         ScoresPlusDevPrior("noul_ctx"),
+        NativeTop1(),
         ShippedThreshold("set"),
         Independent("set", calibrate=True),
         OracleCount("set"),

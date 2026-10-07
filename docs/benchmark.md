@@ -23,6 +23,24 @@ long inputs. v0 is the smallest benchmark that measures all of that, built from 
 | `wide` | probe | 300 (75 × K) | K = 10, 50, 100, 200 | 0–6 | products in an order: cost and quality against the number of options | ours |
 | `order` | robustness | 300 | as source | as source | 100 items each of `sata`, `goemotions`, `nlupp`, options shuffled | — |
 
+### General (single-answer) track
+
+Not multi-answer: the check that a trained model keeps the base's general decision quality (gates G2–G4, and the
+trainability check of [D18](decisions.md)). Each question is asked in its own type and scored by accuracy,
+chance-corrected accuracy, log-loss and calibration error. It is a fast proxy for the [Decision
+Index](https://github.com/apolinario/decision-index), not a replacement: the public board (its maintainers' full run)
+and a submission at release give the comparable number ([D19](decisions.md)).
+
+| track | items | type | options | source, licence |
+|---|---|---|---|---|
+| `mmlu_pro` | 300 | Choice | 3–10 | TIGER-Lab/MMLU-Pro test, MIT |
+| `bbh` | 300 | Choice | 2–18 | BIG-Bench Hard @9ee07bd, the 23 fixed-answer tasks (5,507 items, as the Decision Index), MIT; BIG-bench canary: never train on it |
+| `anli` | 300 | Choice | 3 | facebook/anli test r1–r3, CC BY-NC 4.0 (evaluation only) |
+| `hellaswag` | 300 | Choice | 4 | Rowan/hellaswag validation, MIT |
+| `clinc150` | 300 | Choice | 151 | clinc/oos-eval @828f809, test + out-of-scope test, CC BY 3.0 |
+| `boolq` | 300 | Noul | yes / no | google/boolq validation, CC BY-SA 3.0 |
+| `sst5` | 300 | Score | 5 levels | SetFit/sst5 test, research use |
+
 Sizes are fixed random subsets (seed 0) of each test split. SATA options are written "A. text" so the 39 items with
 repeated option texts are kept. `bzaf bench prepare` is deterministic; the file hashes are in
 [benchmark-v0-manifest.json](benchmark-v0-manifest.json) (rebuild and compare to check you have the same items).
@@ -68,15 +86,22 @@ uv run bzaf bench readout --base-url $URL --model $M --limit 5      # pilot: 5 i
 uv run bzaf bench readout --base-url $URL --model $M --concurrency 16
 uv run bzaf bench score runs/bench-v0/$M --out experiments/E01b-family-check/results/$M
 uv run bzaf bench compare runs/bench-v0/decision-2.0-nox-4b runs/bench-v0/kev-4b --predictor pick+true_count
+uv run bzaf bench compare runs/bench-v0/ours runs/bench-v0/decision-2.0-nox-4b --predictor native@top1   # no-regression
 ```
 
 Add `--with-set` for models with a native set type (Vela 2.0). Readouts resume where they stopped and retry failed
-items. Rough size: about 115k questions per model (2–3 × E01), a few dollars on an L40S.
+items. Rough size: about 115k questions per model for the multi-answer tracks (2–3 × E01) plus 2,100 for the general
+track, a few dollars on an L40S. `--tracks mmlu_pro,bbh,...` runs a subset, e.g. only the general track after a
+training run.
 
 ## Known limits of v0
 
 - English only; one long-input track (ECtHR) and one wide track, which is synthetic. No item is both 200 options and
   8k tokens.
-- `unfair_tos` and `ecthr` load through Hugging Face without a pinned revision; the manifest hashes catch any change.
+- `unfair_tos`, `ecthr` and the Hugging Face general tracks load without a pinned revision; the manifest hashes catch
+  any change.
+- The general track is small (300 items per set, ±5 points per set; its mean is tighter) and some base models may
+  have trained on these sources. That does not bias a base-vs-ours comparison on the same items, but its absolute
+  numbers are not comparable with other models' published ones.
 - GoEmotions labels are noisy (raters often disagree), so its ceiling is low for every model.
 - ECtHR facts are cut to ~6k tokens, which can remove the facts behind a violation; the cut is recorded per item.

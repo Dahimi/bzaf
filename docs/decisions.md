@@ -129,3 +129,14 @@ Step 2 runs only if step 1 passes. Otherwise Kev.
 *Why:* Kev's training data and format code are open, so continued training can replay its data and see its exact
 format. Decision 2.0 is ahead on the leaderboard but offers neither, so it must win clearly to be worth that risk.
 The same readouts are the model study (D17).
+
+## D19 — General quality from the public Decision Index board; a small general track for our own gates (2026-10-07)
+Building the Decision Index locally (≈7 GB of sources, one gated set) is not worth it. For the family check (D18 step 1)
+we use the public 0.3 board instead: the maintainers' full run, with the board's own rule that scores less than
+0.9 points apart are a tie as the "clearly better" threshold. Snapshot read on 2026-10-07 (names from a transcription
+of the board page, matched to models by size; to confirm on the page): Decision 2.0 Nox-4B 45.0; Kev-4B 39.5 (its v2
+row; v1 36.7); Lux-9B 45.2; Kev-9B 43.3 (v2). Nox-4B is the highest-scoring model of about 4B on the board.
+For our own no-regression gates (G2–G4, the D18 trainability check) benchmark v0 gets a general track: seven public
+single-answer test sets, 300 items each, asked in each model's own question types (see
+[benchmark.md](benchmark.md)). At release we submit to the board for the comparable number.
+*Changes the E01b pre-registration before any run: the Decision Index sample is replaced by the board numbers.*

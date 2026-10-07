@@ -42,6 +42,19 @@ listed in the state; exact set) and ACOS. *Verified from the repo's board data:*
 | **Jev** | **26.4 %** | 57.89 |
 | jpt-9b | 23.6 % | 46.89 |
 
+**Decision Index 0.3 board, snapshot 2026-10-07** (full score; transcribed from the board page, some names garbled in
+the transcription and matched by size, so *to confirm*). Top: Perplexity Decider v1.1 62.8 (28B). Around our sizes:
+
+| model (as matched) | params | full score |
+|---|---|---|
+| Decision 2.0 Vega-27B | 28B | 55.9 |
+| Cloudflare Clef-flash | 9.7B | 47.6 |
+| Decision 2.0 Lux-9B | 9.7B | 45.2 |
+| **Decision 2.0 Nox-4B** | 4.2B | **45.0** (best of about 4B) |
+| Kev-9B v2 | 9.7B | 43.3 |
+| next best ~4B entries | 4.7B | 42.9, 41.6, 41.5 |
+| Kev-4B v2 / v1 | 4.7B | 39.5 / 36.7 |
+
 SATA-Bench paper ([2506.00643](https://arxiv.org/abs/2506.00643)): best LLM 41.8 % exact match; models under-predict
 the number of answers (count bias); the Choice Funnel decoding adds up to +29 points.
 
@@ -55,12 +68,24 @@ the number of answers (count bias); the Choice Funnel decoding adds up to +29 po
 | [Winnow-12B](https://huggingface.co/EldanRing/Winnow-12B) | Gemma-4-12B-IT LoRA (merged); Apache-2.0 | — | private dataset, unnamed teacher | Top Intelligence on JevBench v1.5; too big to train on 18 GB. |
 | [Decision 2.0](https://huggingface.co/collections/vllm-sr/decision-20) | Kai 0.6B (Qwen3), Eos 0.8B, Sol 2B, Nox 4B, Lux 9B, Vega 27B (Qwen3.5); Apache-2.0 | candidate head over the options | not yet checked; no public training code for these models found | vLLM Semantic Router team. Served by `vllm-srun` (in their repo, Apache-2.0) at `/v1/systemone`: Choice, Noul, Score, 2–255 options. *Verified.* Vega 56.47 on the Decision Index (#3). |
 | [Vela 2.0](https://huggingface.co/collections/vllm-sr/vela-20) (released 2026-10-06) | 0.3B (ModernBERT, from Decision-1.0-Kai); 0.8B, 4B, 9B fully fine-tuned from Decision 2.0 Eos, Nox, Lux; Apache-2.0 | Choice, Noul, Score, plus **Set** (candidate head + scalar bias, one independent sigmoid per label, threshold from the request or the package) and **Span** (word × label grid) | routing recipe: long-document PII, synthetic router decisions (Qwen3-30B-A3B, kept when a blind re-label agrees), Decision 1.0 sources, safety sets, hallucination spans, Decision 2.0 replay with a KL term | Same team; focus is routing, safety and spans. Set is our "count head off" design (direction 2), shipped. No multi-answer benchmark reported. General decisions drop: Decision Index 0.2.1 31.63 for 4B vs 42.55 for Nox-4B (74 % kept), 41.09 for 9B vs 46.23 (89 %). *Verified (blog source and runtime code in their repo).* |
+| [Cloudflare Clef](https://huggingface.co/Cloudflare/clef) / Clef-flash | multimodal Qwen backbone (28B; flash ~9B); Apache-2.0 | joint schema head: all questions of a request in one sequence, decided jointly (no per-question isolation) | not checked | Clef 61.71 public index. Fine-tunable through Unsloth (below). A possible 9B base: check before E04. |
 | Laya, Von, GLiClass, GLiNER2 | ModernBERT / mmBERT encoders | label scoring | varies | GLiClass already does multi-label with labels in context (direction 2 exists). |
 
 Multi-answer in the ecosystem today: LLEV `multi` (one yes/no pass per option); Imajev `multi` (serving-only fan-out
 to one yes/no per label, threshold 0.5, up to 32 labels); Haste Jev `set_choice` (research
 prototype); JevK5-Lite sigmoid heads (encoder only); Vela 2.0 `set` (released 2026-10-06: one sigmoid per label,
 thresholded; per-label probabilities, no set probability, no count). **As far as found, nobody returns calibrated answer-set probabilities or honours count constraints.**
+
+## Training tools
+
+**Unsloth `FastDecisionModel` / `DecisionTrainer`** (released 2026-10; notebook `Qwen3_5_(4B)-Decision`,
+unslothai/notebooks @59d5a1b; code unslothai/unsloth @660bcba). Turns a plain LLM (Qwen3.5-4B, Llama-3.2-3B,
+Gemma-4-E4B) or a Clef / Laya checkpoint into a decision model: Cloudflare's Clef joint schema head on the last hidden
+states, LoRA r16 on attention, MLP and Gated DeltaNet projections (4-bit), soft-target cross-entropy with optional
+label smoothing, Brier and ordinal terms, a temperature fitted on held-out rows, field-order shuffling, length-grouped
+batches, a 13-gram decontamination filter and a public-data mixture builder. Choice, Noul and Score only (no
+multi-answer). Its decision modules are **AGPL-3.0-only** (the Unsloth core is Apache-2.0; Clef's own code is
+Apache-2.0), so we take ideas from it, not code. *Verified (source).*
 
 ## Prior art (cited from the literature, not re-fetched)
 

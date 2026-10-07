@@ -20,7 +20,16 @@ class FakeClient(DecisionClient):
         gold_opts = self.gold_by_state[json.dumps(state, sort_keys=True)]
         answers = {}
         for key, q in questions.items():
-            if q["type"] == "noul":
+            if key == "native":  # single-answer item asked in its own type
+                if q["type"] == "noul":
+                    answers[key] = {"type": "noul", "noul": 0.8 if "yes" in gold_opts else 0.2}
+                elif q["type"] == "score":
+                    answers[key] = {"type": "score", "probabilities": {str(j): (0.7 if lvl in gold_opts else 0.3 / (len(q["criteria"]) - 1))
+                                                                         for j, lvl in enumerate(q["criteria"])}}
+                else:
+                    names = list(q["criteria"])
+                    answers[key] = {"type": "choice", "probabilities": {n: (0.6 if n in gold_opts else 0.4 / (len(names) - 1)) for n in names}}
+            elif q["type"] == "noul":
                 opt = q["instructions"].rsplit("Option: ", 1)[1]
                 answers[key] = {"type": "noul", "noul": 0.9 if opt in gold_opts else 0.1}
             elif q["type"] == "set":
@@ -153,3 +162,29 @@ def test_permuted_maps_gold_and_descriptions():
     assert sorted(p.options) == it.options
     assert {p.meta["perm"][j] for j in p.gold} == {1, 3}
     assert all(p.meta["descriptions"][j] == "d" + p.options[j] for j in range(4))
+
+
+def test_general_track_native_questions(tmp_path):
+    """Single-answer items asked as Choice, Noul and Score: accuracy, log-loss and the general report section."""
+    from bzaf import bench
+
+    items = []
+    for i in range(30):
+        items.append(Item(id=f"c{i}", dataset="mmlu_pro", state=f"q{i}", question="Which?", options=["A. x", "B. y", "C. z"],
+                          gold=[i % 3], meta={"qtype": "choice"}))
+        items.append(Item(id=f"n{i}", dataset="boolq", state=f"p{i}", question="Is it?", options=["no", "yes"],
+                          gold=[i % 2], meta={"qtype": "noul"}))
+        items.append(Item(id=f"s{i}", dataset="sst5", state=f"t{i}", question="How positive?", options=["neg", "mid", "pos"],
+                          gold=[i % 3], meta={"qtype": "score"}))
+    gold_by_state = {json.dumps(it.state, sort_keys=True): {it.options[j] for j in it.gold} for it in items}
+    for name in ("mmlu_pro", "boolq", "sst5"):
+        write_items([it for it in items if it.dataset == name], tmp_path / "b" / f"{name}.jsonl")
+    bench.readout(FakeClient(gold_by_state, []), tmp_path / "b", tmp_path / "run", tracks=["mmlu_pro", "boolq", "sst5"],
+                  log=lambda *_: None)
+    res = bench.score(tmp_path / "run")
+    for name, p_gold in (("mmlu_pro", 0.6), ("boolq", 0.8), ("sst5", 0.7)):
+        m = res["main"][name]["predictors"]["native@top1"]
+        assert m["exact"] == 1.0 and abs(m["set_nll"] + np.log(p_gold)) < 1e-3
+    assert "General decisions" in bench.format_bench(res)
+    cmp = bench.compare(tmp_path / "run", tmp_path / "run", predictor="native@top1")
+    assert set(cmp["macro"]["tracks"]) == {"mmlu_pro", "boolq", "sst5"}

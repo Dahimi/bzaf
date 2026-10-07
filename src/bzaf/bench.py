@@ -17,6 +17,7 @@ from typing import Callable
 import numpy as np
 
 from .data import load_ecthr, load_goemotions, load_nlupp, load_sata, load_synthetic, load_unfair_tos, load_wide
+from .data.general import load_anli, load_bbh, load_boolq, load_clinc150, load_hellaswag, load_mmlu_pro, load_sst5
 from .schema import Item, read_items, read_jsonl, write_items
 from .score import format_report, score_records
 
@@ -32,7 +33,7 @@ class Track:
     size: int | None = None            # fixed random subset; None = all items
     fanout: str = "noul_ctx"           # the per-option yes/no baseline: noul_ctx lists every option in each question
     separate_timing: bool = False      # read the fan-out and the one-pass questions in separate requests, to time them
-    role: str = "headline"             # headline tracks are averaged in the summary; probes are reported apart
+    role: str = "headline"             # headline: multi-answer, averaged; probe: reported apart; general: single-answer
     about: str = ""
 
 
@@ -45,6 +46,14 @@ TRACKS = (
     Track("synthetic", load_synthetic, {"n": 300}, None, about="statements about a JSON order, exact gold, 4-10 options, 0-10 answers"),
     Track("wide", load_wide, {"n_per_size": 75}, None, fanout="noul", separate_timing=True, role="probe",
           about="products in an order, 10/50/100/200 options, 0-6 answers: cost and quality against the number of options"),
+    # general (single-answer) decisions: the no-regression check, each question asked in its own type
+    Track("mmlu_pro", load_mmlu_pro, {}, 300, role="general", about="knowledge and reasoning, Choice, 3-10 options"),
+    Track("bbh", load_bbh, {}, 300, role="general", about="BIG-Bench Hard, 23 fixed-answer tasks, Choice, 2-18 options"),
+    Track("anli", load_anli, {}, 300, role="general", about="adversarial NLI, Choice, 3 options"),
+    Track("hellaswag", load_hellaswag, {}, 300, role="general", about="plausible continuation, Choice, 4 options"),
+    Track("clinc150", load_clinc150, {}, 300, role="general", about="intents incl. out-of-scope, Choice, 151 options"),
+    Track("boolq", load_boolq, {}, 300, role="general", about="yes/no questions about a passage, Noul"),
+    Track("sst5", load_sst5, {}, 300, role="general", about="sentiment level, Score, 5 levels"),
 )
 ORDER_SOURCES = {"sata": 100, "goemotions": 100, "nlupp": 100}  # items re-asked with shuffled options
 ORDER_SEED = 1
@@ -68,11 +77,19 @@ def _sha(path: Path) -> str:
 def prepare(out: str | Path = f"data/bench-{VERSION}", tracks: list[str] | None = None, log=print) -> dict:
     out = Path(out)
     manifest = {"version": VERSION, "tracks": {}}
+    if tracks and (out / "manifest.json").exists():  # rebuilding some tracks keeps the others' entries
+        manifest = json.loads((out / "manifest.json").read_text())
+        manifest.get("failed", {}).clear()
     chosen: dict[str, list[Item]] = {}
     for t in TRACKS:
         if tracks and t.name not in tracks:
             continue
-        items = t.loader(limit=t.size, seed=0, **t.kwargs)
+        try:
+            items = t.loader(limit=t.size, seed=0, **t.kwargs)
+        except Exception as e:  # one unreachable source should not stop the others; the manifest shows what is missing
+            log(f"{t.name}: FAILED ({type(e).__name__}: {e}); skipped")
+            manifest.setdefault("failed", {})[t.name] = f"{type(e).__name__}: {e}"[:300]
+            continue
         chosen[t.name] = items
         path = out / f"{t.name}.jsonl"
         write_items(items, path)
@@ -83,6 +100,9 @@ def prepare(out: str | Path = f"data/bench-{VERSION}", tracks: list[str] | None 
             "answers": dict(sorted(Counter(len(i.gold) for i in items).items())),
         }
         log(f"{t.name}: {len(items)} items -> {path}")
+    manifest["tracks"] = {t.name: manifest["tracks"][t.name] for t in TRACKS if t.name in manifest["tracks"]}  # fixed order
+    if not manifest.get("failed"):
+        manifest.pop("failed", None)
     if all(name in chosen for name in ORDER_SOURCES):
         rng = random.Random(ORDER_SEED)
         order = [permuted(it, rng) for name, n in ORDER_SOURCES.items()
@@ -104,7 +124,9 @@ def readout_plan(bench: Path, with_set: bool = False, tracks: list[str] | None =
         if tracks and t.name not in tracks:
             continue
         f = bench / f"{t.name}.jsonl"
-        if t.separate_timing:
+        if t.role == "general":
+            plan.append((f, t.name, ["native"]))
+        elif t.separate_timing:
             plan.append((f, f"{t.name}__fanout", [t.fanout]))
             plan.append((f, f"{t.name}__onepass", list(ONE_PASS) + extra))
         else:
@@ -216,6 +238,8 @@ def format_bench(res: dict) -> str:
              "|---|---|" + "---|" * len(SUMMARY)]
     roles = {t.name: t.role for t in TRACKS}
     for ds, r in main.items():
+        if roles.get(ds) == "general":
+            continue
         cells = []
         for _, names in SUMMARY:
             n = _first(r["predictors"], names)
@@ -223,6 +247,23 @@ def format_bench(res: dict) -> str:
             cells.append(f"{100*m['exact']:.1f} / {m['example_f1']:.3f}" if m else "—")
         tag = " (probe)" if roles.get(ds) == "probe" else ""
         lines.append(f"| {ds}{tag} | {r['n_test']} | " + " | ".join(cells) + " |")
+    general = [(ds, r) for ds, r in main.items() if roles.get(ds) == "general" and "native@top1" in r["predictors"]]
+    if general:
+        lines += ["", "## General decisions (single answer, each question in its own type)", "",
+                  "Accuracy with its 95 % CI; chance-corrected accuracy = (accuracy − chance) / (1 − chance); log-loss and "
+                  "calibration error of the answer's probability.", "",
+                  "| track | items (test) | accuracy % [95% CI] | chance % | chance-corrected % | log-loss | calibration error |",
+                  "|---|---|---|---|---|---|---|"]
+        corrected = []
+        for ds, r in general:
+            m = r["predictors"]["native@top1"]
+            chance = float(np.mean([1.0 / k for k in r["test_k"]]))
+            cc = (m["exact"] - chance) / (1 - chance)
+            corrected.append(cc)
+            lo, hi = m["exact_ci"]
+            lines.append(f"| {ds} | {r['n_test']} | {100*m['exact']:.1f} [{100*lo:.1f}, {100*hi:.1f}] | {100*chance:.1f} | "
+                         f"{100*cc:.1f} | {m['set_nll']:.3f} | {m['ece']:.3f} |")
+        lines.append(f"| **mean** | | | | **{100*float(np.mean(corrected)):.1f}** | | |")
     if res["stability"]:
         lines += ["", "## Option-order stability", "",
                   "Same items, options shuffled: share of answers unchanged, and mean Jaccard overlap of the two answers.", "",
@@ -276,7 +317,7 @@ def compare(run_a: str | Path, run_b: str | Path, predictor: str = "pick+true_co
             continue
         boots = d[rng.integers(0, len(d), size=(n_boot, len(d)))].mean(axis=1)
         per_track[ds] = {"n": len(d), "mean": float(d.mean()), "ci": (float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975)))}
-        if roles.get(ds) == "headline":
+        if roles.get(ds) in ("headline", "general"):  # a predictor exists on one kind only: multi-answer or general
             diffs[ds] = d
     out = {"predictor": predictor, "metric": metric, "tracks": per_track}
     if diffs:
@@ -294,6 +335,6 @@ def format_compare(res: dict, a: str, b: str) -> str:
         lines.append(f"| {ds} | {r['n']} | {scale*r['mean']:+.2f} [{scale*r['ci'][0]:+.2f}, {scale*r['ci'][1]:+.2f}] |")
     if "macro" in res:
         m = res["macro"]
-        lines.append(f"| **macro (headline tracks)** | {len(m['tracks'])} tracks | **{scale*m['mean']:+.2f}** "
+        lines.append(f"| **macro ({', '.join(m['tracks'])})** | {len(m['tracks'])} tracks | **{scale*m['mean']:+.2f}** "
                      f"[{scale*m['ci'][0]:+.2f}, {scale*m['ci'][1]:+.2f}] |")
     return "\n".join(lines)
