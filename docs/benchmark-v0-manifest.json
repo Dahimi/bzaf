@@ -1,0 +1,106 @@
+{
+  "version": "v0",
+  "tracks": {
+    "sata": {
+      "file": "sata.jsonl",
+      "items": 1650,
+      "sha256": "76b33642cdfbb93d79ac98f4815ee8591abe0a4731e99806a369604bf8dfcc26",
+      "role": "headline",
+      "about": "exam-style knowledge questions, 3-16 options, 2-11 answers (SATA-Bench, all 1,650)",
+      "options_mean": 9.4,
+      "options_max": 16,
+      "answers": {
+        "2": 649,
+        "3": 369,
+        "4": 192,
+        "5": 163,
+        "6": 132,
+        "7": 56,
+        "8": 44,
+        "9": 27,
+        "10": 16,
+        "11": 2
+      }
+    },
+    "goemotions": {
+      "file": "goemotions.jsonl",
+      "items": 600,
+      "sha256": "78ece4fdd96021b590561342da0d7d201e4d078d79ee1588104a786b96dd0554",
+      "role": "headline",
+      "about": "emotions in Reddit comments, 28 options, mostly 1 answer",
+      "options_mean": 28.0,
+      "options_max": 28,
+      "answers": {
+        "1": 508,
+        "2": 86,
+        "3": 6
+      }
+    },
+    "nlupp": {
+      "file": "nlupp.jsonl",
+      "items": 600,
+      "sha256": "1144e61dc164c5a5b77d7897467b58b2408d4c5e2ce8f2cc4a70d249efa23090",
+      "role": "headline",
+      "about": "intents in customer messages, 40-48 options with descriptions, 0-6 answers",
+      "options_mean": 45.3,
+      "options_max": 48,
+      "answers": {
+        "0": 73,
+        "1": 123,
+        "2": 204,
+        "3": 131,
+        "4": 53,
+        "5": 12,
+        "6": 4
+      }
+    },
+    "synthetic": {
+      "file": "synthetic.jsonl",
+      "items": 300,
+      "sha256": "b0f2593357fd3b72e258251071445465ae4d04291a74febf693d352be84c33a1",
+      "role": "headline",
+      "about": "statements about a JSON order, exact gold, 4-10 options, 0-10 answers",
+      "options_mean": 7.0,
+      "options_max": 10,
+      "answers": {
+        "0": 10,
+        "1": 60,
+        "2": 65,
+        "3": 70,
+        "4": 56,
+        "5": 22,
+        "6": 13,
+        "7": 4
+      }
+    },
+    "wide": {
+      "file": "wide.jsonl",
+      "items": 300,
+      "sha256": "798f865bc3f53bcb28194878de06f41dc6cf6fa3578b44e5babe1701d4966a0e",
+      "role": "probe",
+      "about": "products in an order, 10/50/100/200 options, 0-6 answers: cost and quality against the number of options",
+      "options_mean": 90.0,
+      "options_max": 200,
+      "answers": {
+        "0": 22,
+        "1": 69,
+        "2": 74,
+        "3": 66,
+        "4": 35,
+        "5": 25,
+        "6": 9
+      }
+    }
+  },
+  "order": {
+    "file": "order.jsonl",
+    "items": 300,
+    "sha256": "d07198587349f389037f28dced3bc0f20ec67f01aa04059712b3b533227ea0b8",
+    "sources": {
+      "sata": 100,
+      "goemotions": 100,
+      "nlupp": 100
+    },
+    "about": "the same items with shuffled options; compared with the main tracks' answers"
+  }
+}

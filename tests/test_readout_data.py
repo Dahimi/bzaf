@@ -112,3 +112,44 @@ def test_native_set_variant_reads_probabilities_and_threshold(tmp_path):
         assert ShippedThreshold().predict(r).subset == set(r["gold"])
     rows = score_records(recs)["synthetic"]["predictors"]
     assert rows["set@shipped"]["exact"] == 1.0 and "set+true_count" in rows
+
+
+def test_bench_end_to_end_offline(tmp_path):
+    """prepare (offline tracks) -> readout against the fake server -> score, including the order track and the
+    cost-by-options table."""
+    import random
+
+    from bzaf import bench
+
+    bench.prepare(tmp_path / "b", tracks=["synthetic", "wide"], log=lambda *_: None)
+    items = list(read_items(tmp_path / "b" / "synthetic.jsonl"))[:60]
+    rng = random.Random(1)
+    write_items([bench.permuted(it, rng) for it in items], tmp_path / "b" / "order.jsonl")
+    all_items = items + list(read_items(tmp_path / "b" / "wide.jsonl"))
+    gold_by_state = {json.dumps(it.state, sort_keys=True): {it.options[j] for j in it.gold} for it in all_items}
+    client = FakeClient(gold_by_state, [])
+    bench.readout(client, tmp_path / "b", tmp_path / "run", with_set=True, limit=60, log=lambda *_: None)
+    res = bench.score(tmp_path / "run")
+    assert {"synthetic", "wide"} <= set(res["main"])
+    # the fake server's answers do not depend on option order, so answers without ties survive the shuffle (the fake
+    # gives every gold option the same score, so top-k predictors break ties by position)
+    stab = res["stability"]["synthetic"]
+    assert all(stab[n]["unchanged"] == 1.0 for n in ("noul_ctx@0.5", "pick+count", "set@shipped"))
+    assert res["cost"] and all(row["fanout_s"] >= 0 for row in res["cost"])
+    text = bench.format_bench(res)
+    assert "Option-order stability" in text and "ceiling: ranking + true count" in text
+    cmp = bench.compare(tmp_path / "run", tmp_path / "run")      # a run against itself: zero difference everywhere
+    assert cmp["macro"]["mean"] == 0.0 and all(r["mean"] == 0.0 for r in cmp["tracks"].values())
+
+
+def test_permuted_maps_gold_and_descriptions():
+    import random
+
+    from bzaf.bench import permuted
+
+    it = Item(id="x", dataset="d", state="s", question="q", options=["a", "b", "c", "d"], gold=[1, 3],
+              meta={"descriptions": ["da", "db", "dc", "dd"]})
+    p = permuted(it, random.Random(0))
+    assert sorted(p.options) == it.options
+    assert {p.meta["perm"][j] for j in p.gold} == {1, 3}
+    assert all(p.meta["descriptions"][j] == "d" + p.options[j] for j in range(4))

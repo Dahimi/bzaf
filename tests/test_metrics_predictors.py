@@ -70,3 +70,27 @@ def test_score_files_keeps_dotted_model_names(tmp_path):
     src.write_text(json.dumps(rec) + "\n")
     score_files([str(src)], out=str(tmp_path / "kev-0.8b"))
     assert (tmp_path / "kev-0.8b.md").exists() and (tmp_path / "kev-0.8b.json").exists()
+
+
+def test_calibration_and_selective_automation():
+    import numpy as np
+
+    from bzaf.metrics import ece, selective
+
+    conf = np.array([0.9] * 5 + [0.1] * 5)                 # two equal-size bins: says 90 %, right 80 %; says 10 %, right 20 %
+    right = np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype=float)
+    assert abs(ece(conf, right, bins=2) - (0.5 * abs(0.9 - 0.8) + 0.5 * abs(0.1 - 0.2))) < 1e-9
+    s = selective(np.array([0.99, 0.9, 0.8, 0.2]), np.array([1, 1, 0, 1], dtype=float))
+    assert s["cov@90"] == 0.5 and s["cov@95"] == 0.5          # the two most confident are right; the third is wrong
+    assert abs(s["aurc"] - np.mean([0, 0, 1 / 3, 1 / 4])) < 1e-9
+
+
+def test_satabench_metrics_follow_their_definitions():
+    from bzaf.metrics import satabench_metrics
+
+    golds = [{0, 1}, {1, 2}, {0, 2}]
+    preds = [{0, 1}, set(), {0}]          # one right, one empty (left out of their EM), one partly right
+    m = satabench_metrics(preds, golds, [3, 3, 3])
+    assert m["EM"] == 0.5 and m["abstained"] == 1
+    assert abs(m["JI"] - (1 + 0 + 0.5) / 3) < 1e-9
+    assert m["CtDif"] == (0 - 2 - 1) / 3

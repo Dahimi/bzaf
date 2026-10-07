@@ -9,7 +9,8 @@ from __future__ import annotations
 from ..schema import Item
 from ._util import fetch, sample
 
-BASE = "https://raw.githubusercontent.com/google-research/google-research/master/goemotions/data"
+REVISION = "e49bbfe381c9c0e564b937f1c4e163a2273c65cc"  # google-research commit, 2026-10-07 (the data has not changed since 2020)
+BASE = f"https://raw.githubusercontent.com/google-research/google-research/{REVISION}/goemotions/data"
 QUESTION = "Which emotions does the author of this comment express?"
 
 

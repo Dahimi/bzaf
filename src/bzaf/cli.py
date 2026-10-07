@@ -1,4 +1,4 @@
-"""Command line: `bzaf prepare | readout | score`. See README.md for the end-to-end E01 recipe."""
+"""Command line: `bzaf prepare | readout | score | bench`. See README.md and docs/benchmark.md."""
 from __future__ import annotations
 
 import argparse
@@ -34,6 +34,32 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--dev-frac", type=float, default=0.3)
     s.add_argument("--out", default=None, help="write <out>.md and <out>.json")
 
+    b = sub.add_parser("bench", help="benchmark v0: prepare the tracks, read a model out on all of them, score")
+    bsub = b.add_subparsers(dest="bench_cmd", required=True)
+    bp = bsub.add_parser("prepare", help="write every track to data/bench-v0 with a manifest (deterministic)")
+    bp.add_argument("--out", default="data/bench-v0")
+    bp.add_argument("--tracks", default=None, help="comma list (default: all)")
+    br = bsub.add_parser("readout", help="read one model out on every track (resumable)")
+    br.add_argument("--base-url", required=True)
+    br.add_argument("--model", required=True)
+    br.add_argument("--bench", default="data/bench-v0")
+    br.add_argument("--out", default=None, help="default runs/bench-v0/<model>")
+    br.add_argument("--with-set", action="store_true", help="also ask the native `set` question type (Vela 2.0)")
+    br.add_argument("--tracks", default=None, help="comma list of tracks (and/or `order`); default all")
+    br.add_argument("--max-questions", type=int, default=64)
+    br.add_argument("--concurrency", type=int, default=8)
+    br.add_argument("--limit", type=int, default=None, help="first N items of each track (pilot)")
+    br.add_argument("--timeout", type=float, default=300.0)
+    bs = bsub.add_parser("score", help="score one model's benchmark run directory")
+    bs.add_argument("run_dir")
+    bs.add_argument("--dev-frac", type=float, default=0.3)
+    bs.add_argument("--out", default=None, help="write <out>.md and <out>.json")
+    bc = bsub.add_parser("compare", help="paired comparison of two models' runs (A - B), per track and macro-averaged")
+    bc.add_argument("run_a")
+    bc.add_argument("run_b")
+    bc.add_argument("--predictor", default="pick+true_count")
+    bc.add_argument("--metric", default="per_item_exact", choices=["per_item_exact", "per_item_f1", "per_item_nll"])
+
     a = ap.parse_args(argv)
     if a.cmd == "prepare":
         kw = {"limit": a.limit, "seed": a.seed}
@@ -47,6 +73,22 @@ def main(argv: list[str] | None = None) -> int:
 
         items = list(read_items(a.items))[: a.limit]
         run_readout(DecisionClient(a.base_url, a.model, timeout=a.timeout), items, a.out, a.variants.split(","), a.max_questions, a.concurrency)
+    elif a.cmd == "bench":
+        from . import bench
+
+        tracks = a.tracks.split(",") if getattr(a, "tracks", None) else None
+        if a.bench_cmd == "prepare":
+            bench.prepare(a.out, tracks)
+        elif a.bench_cmd == "readout":
+            from .client import DecisionClient
+
+            bench.readout(DecisionClient(a.base_url, a.model, timeout=a.timeout), a.bench, a.out or f"runs/bench-v0/{a.model}",
+                          a.with_set, tracks, a.max_questions, a.concurrency, a.limit)
+        elif a.bench_cmd == "compare":
+            res = bench.compare(a.run_a, a.run_b, a.predictor, a.metric)
+            print(bench.format_compare(res, a.run_a, a.run_b))
+        else:
+            print(bench.score_dir(a.run_dir, a.dev_frac, a.out))
     elif a.cmd == "score":
         from .score import score_files
 

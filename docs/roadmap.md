@@ -7,7 +7,7 @@ failed gate is a result, not a delay: it redirects the plan before money or week
 | Phase | Work | Model | Gate | Budget envelope |
 |---|---|---|---|---|
 | 1 ✅ | [E01](../experiments/E01-readout-baselines/) readout baselines | Kev 0.8B/4B, Imajev 4B | G1 passed: the count is the bottleneck | ~$5 (spent) |
-| 2a | Benchmark v0; E01b family check and model study | Kev-4B, Imajev-4B, Decision 2.0 Nox-4B | D18 rule picks the family | ~$20 |
+| 2a | [Benchmark v0](benchmark.md) (built); [E01b](../experiments/E01b-family-check/) family check and model study | Kev-4B, Imajev-4B, Decision 2.0 Nox-4B | D18 rule picks the family | ~$20 |
 | 2b (parallel) | Trainer v0 (Kev adapter); [E02](../experiments/E02-count-head/) count head, stage-A-lite data | Kev-0.8B (dev base) | **G2:** beats E01 baselines on held-out sets, no single-answer regression | ~$15 |
 | 3 | Data v1 (stages A–B) + E03 at 4B on the chosen family: count head vs sigmoid, data ablations; **release v0.1 (4B)** | 4B | **G3:** multi-answer gains on held-out families, no regression on general benchmarks, 200-option / 8k probe passes | ~$60 (incl. first teacher labels) |
 | 4 | Data v2 (stages C–D) + E04: 9B, long-context training; family re-checked at 9B (D18) | 9B | **G4:** hard requirements met, no regression; submit to JevBench and the Decision Index | ~$150 |

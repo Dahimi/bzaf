@@ -26,8 +26,14 @@ VARIANTS = ("noul", "noul_ctx", "pick", "count")
 ALL_VARIANTS = VARIANTS + ("set",)
 
 
-def _listing(options: list[str]) -> str:
+def _listing(options: list[str], descriptions: list[str] | None = None) -> str:
+    if descriptions:
+        return "\n".join(f"- {o}: {d}" for o, d in zip(options, descriptions))
     return "\n".join(f"- {o}" for o in options)
+
+
+def _named(o: str, d: str | None) -> str:
+    return f"{o} ({d})" if d else o
 
 
 def count_label(n: int, k: int) -> str:
@@ -40,21 +46,25 @@ def count_label(n: int, k: int) -> str:
 
 def build_questions(item: Item, variants: Iterable[str] = VARIANTS) -> dict[str, dict]:
     q, opts, k = item.question, item.options, len(item.options)
+    desc = item.meta.get("descriptions")  # optional, one per option (e.g. NLU++ intent descriptions)
+    ds = desc or [None] * k
     out: dict[str, dict] = {}
     variants = set(variants)
     if "noul" in variants:
         for j, o in enumerate(opts):
-            out[f"noul_{j}"] = {"type": "noul", "instructions": f"{q}\nDoes this option apply?\nOption: {o}"}
+            out[f"noul_{j}"] = {"type": "noul", "instructions": f"{q}\nDoes this option apply?\nOption: {_named(o, ds[j])}"}
     if "noul_ctx" in variants:
+        listing = _listing(opts, desc)
         for j, o in enumerate(opts):
-            out[f"noulctx_{j}"] = {"type": "noul", "instructions": f"{q}\nAll options:\n{_listing(opts)}\n\nDoes this option apply?\nOption: {o}"}
+            out[f"noulctx_{j}"] = {"type": "noul",
+                                   "instructions": f"{q}\nAll options:\n{listing}\n\nDoes this option apply?\nOption: {_named(o, ds[j])}"}
     if "pick" in variants:
-        out["pick"] = {"type": "choice", "instructions": f"{q}\nPick the option that applies best.", "criteria": {o: None for o in opts}}
+        out["pick"] = {"type": "choice", "instructions": f"{q}\nPick the option that applies best.", "criteria": dict(zip(opts, ds))}
     if "count" in variants:
-        out["count"] = {"type": "choice", "instructions": f"{q}\nOptions:\n{_listing(opts)}\n\nHow many of these options apply?",
+        out["count"] = {"type": "choice", "instructions": f"{q}\nOptions:\n{_listing(opts, desc)}\n\nHow many of these options apply?",
                         "criteria": {str(n): count_label(n, k) for n in range(k + 1)}}
     if "set" in variants:
-        out["set"] = {"type": "set", "instructions": f"{q}\nSelect every option that applies.", "criteria": {o: None for o in opts}}
+        out["set"] = {"type": "set", "instructions": f"{q}\nSelect every option that applies.", "criteria": dict(zip(opts, ds))}
     return out
 
 
@@ -92,7 +102,10 @@ def read_item(client: DecisionClient, item: Item, variants: Iterable[str] = VARI
         answers.update(resp["answers"])
         sets.update(resp.get("sets") or {})
         thresholds.update(resp.get("thresholds") or {})
-    rec = {"id": item.id, "dataset": item.dataset, "model": client.model, "k": len(item.options), "gold": item.gold}
+    rec = {"id": item.id, "dataset": item.dataset, "model": client.model, "k": len(item.options), "gold": item.gold,
+           "variants": sorted(set(variants))}
+    if "perm" in item.meta:  # options were shuffled (order-stability track): perm[j] = original index of option j
+        rec["perm"] = item.meta["perm"]
     rec.update(parse_answers(item, answers, sets, thresholds))
     rec["latency_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     return rec
