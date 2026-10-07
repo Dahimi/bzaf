@@ -69,7 +69,16 @@ Beyond the count, options interact only through their scores, so a rule like "B 
 directly. If, after training, a gap remains on real data that the count cannot explain, the next step is a small
 pairwise term or a chain head over the per-option readout vectors (see [alternatives.md](alternatives.md)).
 
-## Theory it rests on
+## Theory it rests on, and what is not new
+
+**Not new:** predicting the number of labels and selecting the top-scoring ones (MetaLabeler, 2009), learning
+cardinality and element scores jointly (DeepSetNet / Rezatofighi et al., 2017–2018), and the size-conditioned
+likelihood itself (conditional Bernoulli / conditional Poisson). See [landscape.md](landscape.md).
+**What is new here:** options defined at request time rather than a fixed label set, so the count must be inferred
+from the question and the options themselves; a single pass inside a typed decision model that also serves Choice,
+yes/no and Score; the measured finding that these models rank well but cannot count (E01); and calibrated set
+probabilities used for decisions (constraints, "none", selective automation).
+
 
 Dembczyński et al. (2012), *On label dependence and loss minimization in multi-label classification*: per-label
 losses need only marginals; exact-set accuracy needs the joint mode; F-measure needs the per-label probabilities

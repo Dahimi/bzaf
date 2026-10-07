@@ -60,6 +60,12 @@ count constraints.**
 
 ## Prior art (cited from the literature, not re-fetched)
 
+- **Predicting the number of labels (closest prior art to our count head):** MetaLabeler (Tang, Rajan & Narayanan,
+  WWW 2009) learns the number of labels per instance and takes the top-k of a score vector; DeepSetNet (Rezatofighi et
+  al., ICCV 2017) and *Joint Learning of Set Cardinality and State Distribution* (AAAI 2018) learn cardinality and
+  element scores jointly for multi-label image classification. The exact size-conditioned likelihood (conditional
+  Bernoulli / conditional Poisson, computed with elementary symmetric polynomials) is classical sampling theory
+  (Chen, Dempster & Liu 1994) and is used for k-subset learning (e.g. SIMPLE, Ahmed et al. 2023).
 - Label dependence and loss: Dembczyński et al. 2012 (MLJ); probabilistic classifier chains, Dembczyński et al. 2010;
   F-measure maximisation (GFM), Dembczyński et al. 2011; classifier chains, Read et al. 2009.
 - Constrained joint outputs: Semantic Probabilistic Layers (Ahmed et al. 2022); semantic loss (Xu et al. 2018).
@@ -70,7 +76,7 @@ count constraints.**
 
 ## Where the gap is
 
-The algorithms are known. What is missing: (1) no typed decision model returns calibrated answer-set probabilities
+The algorithms are known, including the count-then-select idea (MetaLabeler, DeepSetNet). What is missing: (1) no typed decision model returns calibrated answer-set probabilities
 or honours count constraints; (2) no benchmark in this ecosystem scores set-level calibration (the Decision Index has
 only exact-set accuracy); (3) nobody has measured how much of the multi-answer gap is counting versus genuine
 dependence between options. This project targets (1) with evidence for (3), and contributes (2).
