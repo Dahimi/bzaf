@@ -36,6 +36,20 @@
         "3": 6
       }
     },
+    "unfair_tos": {
+      "file": "unfair_tos.jsonl",
+      "items": 800,
+      "sha256": "f68f4f413f585d0d9b80065d5a41add0e9df10e874c1df7b25f0f135e187e188",
+      "role": "headline",
+      "about": "unfair clause types in terms of service, 8 options, mostly none",
+      "options_mean": 8.0,
+      "options_max": 8,
+      "answers": {
+        "0": 708,
+        "1": 85,
+        "2": 7
+      }
+    },
     "nlupp": {
       "file": "nlupp.jsonl",
       "items": 600,
@@ -52,6 +66,22 @@
         "4": 53,
         "5": 12,
         "6": 4
+      }
+    },
+    "ecthr": {
+      "file": "ecthr.jsonl",
+      "items": 300,
+      "sha256": "2b75b77920b8212df424aaf65e5c19f2eab25dc39f17fdeb0a90a6565cd2b8d8",
+      "role": "headline",
+      "about": "violated articles from court case facts, 10 options, long inputs (up to ~6k tokens)",
+      "options_mean": 10.0,
+      "options_max": 10,
+      "answers": {
+        "0": 42,
+        "1": 202,
+        "2": 41,
+        "3": 13,
+        "4": 2
       }
     },
     "synthetic": {
