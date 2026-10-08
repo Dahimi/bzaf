@@ -280,9 +280,9 @@ def answer(pkg: Package, row: Row, logits: list[float]) -> dict:
 
 def golden_check(repo_id: str, device: str = "cpu", autocast: bool = False, cache_dir: str | None = None) -> dict:
     """Our adapter on the runtime's readiness request against its recorded FP32 answers for this model (the
-    `decision2_golden.json` copy of the runtime registry). Returns the largest probability difference; expect ~1e-5
+    `decision2_golden.py` copy of the runtime registry). Returns the largest probability difference; expect ~1e-5
     in FP32 and ~1e-2 under bf16 autocast."""
-    golden = json.loads((Path(__file__).with_name("decision2_golden.json")).read_text())
+    from .decision2_golden import GOLDEN as golden
     ref = golden["models"][repo_id]
     pkg = Package.open(repo_id, revision=ref["revision"], cache_dir=cache_dir)
     tok = pkg.tokenizer()
