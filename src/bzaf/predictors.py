@@ -111,6 +111,20 @@ class NativeTop1(Predictor):
         return Prediction({int(np.argmax(p))}, dist)
 
 
+class OursSet(Predictor):
+    """Our trained model's multi-answer question: its option logits and its count head define the set distribution;
+    the answer is the most likely set."""
+    name, needs = "ours@mode", ("multi_z", "multi_count")
+
+    def predict(self, rec):
+        k = rec["k"]
+        c = np.zeros(k + 1)
+        n = min(k + 1, len(rec["multi_count"]))
+        c[:n] = rec["multi_count"][:n]
+        dist = SetDistribution.from_logits_and_count(np.asarray(rec["multi_z"], dtype=float), c / c.sum())
+        return Prediction(set(dist.mode()), dist)
+
+
 class ChoiceTop1(Predictor):
     """Today's single-answer Choice: always exactly one option."""
     name, needs = "pick@top1", ("pick",)
@@ -207,6 +221,7 @@ def default_predictors() -> list[Predictor]:
         ScoresPlusDevPrior("pick"),
         ScoresPlusDevPrior("noul_ctx"),
         NativeTop1(),
+        OursSet(),
         ShippedThreshold("set"),
         Independent("set", calibrate=True),
         OracleCount("set"),

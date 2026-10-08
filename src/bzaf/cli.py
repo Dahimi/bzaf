@@ -59,6 +59,8 @@ def main(argv: list[str] | None = None) -> int:
     bc.add_argument("run_b")
     bc.add_argument("--predictor", default="pick+true_count")
     bc.add_argument("--metric", default="per_item_exact", choices=["per_item_exact", "per_item_f1", "per_item_nll"])
+    bc.add_argument("--predictor-b", default=None, help="B's predictor(s), comma list: per track the best one (default: as A)")
+    bc.add_argument("--only", default=None, help="comma list of tracks to compare (default: all)")
 
     a = ap.parse_args(argv)
     if a.cmd == "prepare":
@@ -85,7 +87,8 @@ def main(argv: list[str] | None = None) -> int:
             bench.readout(DecisionClient(a.base_url, a.model, timeout=a.timeout), a.bench, a.out or f"runs/bench-v0/{a.model}",
                           a.with_set, tracks, a.max_questions, a.concurrency, a.limit)
         elif a.bench_cmd == "compare":
-            res = bench.compare(a.run_a, a.run_b, a.predictor, a.metric)
+            res = bench.compare(a.run_a, a.run_b, a.predictor, a.metric, predictor_b=a.predictor_b,
+                                tracks=a.only.split(",") if a.only else None)
             print(bench.format_compare(res, a.run_a, a.run_b))
         else:
             print(bench.score_dir(a.run_dir, a.dev_frac, a.out))

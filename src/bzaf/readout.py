@@ -12,6 +12,8 @@ Per item, four variants (all in the same request where possible; the questions a
             own threshold. Opt-in (not in VARIANTS): only servers that declare the type accept it.
   native    single-answer items (general track): the question asked in its own type, meta.qtype = choice, noul or
             score; the answer's probabilities are recorded per option.
+  multi     our multi-answer type (trained models only): option logits and count probabilities, recorded as
+            multi_z and multi_count.
 """
 from __future__ import annotations
 
@@ -25,7 +27,7 @@ from .client import DecisionClient
 from .schema import Item
 
 VARIANTS = ("noul", "noul_ctx", "pick", "count")
-ALL_VARIANTS = VARIANTS + ("set", "native")
+ALL_VARIANTS = VARIANTS + ("set", "native", "multi")
 
 
 def _listing(options: list[str], descriptions: list[str] | None = None) -> str:
@@ -67,6 +69,8 @@ def build_questions(item: Item, variants: Iterable[str] = VARIANTS) -> dict[str,
                         "criteria": {str(n): count_label(n, k) for n in range(k + 1)}}
     if "set" in variants:
         out["set"] = {"type": "set", "instructions": f"{q}\nSelect every option that applies.", "criteria": dict(zip(opts, ds))}
+    if "multi" in variants:
+        out["multi"] = {"type": "multi", "instructions": q, "criteria": dict(zip(opts, ds))}
     if "native" in variants:
         qtype = item.meta.get("qtype", "choice")
         if qtype == "noul":
@@ -103,6 +107,9 @@ def parse_answers(item: Item, answers: dict, sets: dict | None = None, threshold
             p = a["probabilities"]
             keys = [str(j) for j in range(k)] if qtype == "score" and str(0) in p else item.options
             rec["native"] = [float(p[key]) for key in keys]
+    if "multi" in answers:
+        rec["multi_z"] = [float(x) for x in answers["multi"]["logits"]]
+        rec["multi_count"] = [float(x) for x in answers["multi"]["count"]]
     if sets and "set" in sets:
         p = sets["set"]["probabilities"]
         rec["set"] = [float(p[o]) for o in item.options]

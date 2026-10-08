@@ -302,27 +302,39 @@ def score_dir(run_dir: str, dev_frac: float = 0.3, out: str | None = None) -> st
 
 
 def compare(run_a: str | Path, run_b: str | Path, predictor: str = "pick+true_count", metric: str = "per_item_exact",
-            n_boot: int = 2000, seed: int = 0, dev_frac: float = 0.3) -> dict:
-    """Paired comparison of two models' benchmark runs (A − B) for one predictor, on the test items both answered:
-    per track, and the macro average over headline tracks (each track weighs the same; bootstrap resamples items
-    within each track)."""
+            n_boot: int = 2000, seed: int = 0, dev_frac: float = 0.3, predictor_b: str | None = None,
+            tracks: list[str] | None = None) -> dict:
+    """Paired comparison of two models' benchmark runs (A − B) on the test items both answered: per track, and the
+    macro average over headline (or general) tracks, each track weighing the same; the bootstrap resamples items
+    within each track. `predictor_b` (default: the same as A's) may list several predictors, comma-separated: per
+    track, B's best of them on its test items is used (highest exact-set / F1, lowest log-loss), a conservative
+    baseline. `tracks` restricts the comparison (e.g. to the held-out tracks)."""
     a, b = score(run_a, dev_frac)["main"], score(run_b, dev_frac)["main"]
     roles = {t.name: t.role for t in TRACKS}
     rng = np.random.default_rng(seed)
     per_track, diffs = {}, {}
+    b_names = (predictor_b or predictor).split(",")
+    lower_better = metric == "per_item_nll"
     for ds in sorted(set(a) & set(b)):
-        if predictor not in a[ds]["predictors"] or predictor not in b[ds]["predictors"]:
+        if tracks and ds not in tracks:
             continue
+        cands = [n for n in b_names if n in b[ds]["predictors"] and metric in b[ds]["predictors"][n]]
+        if predictor not in a[ds]["predictors"] or not cands:
+            continue
+
+        means = {n: float(np.mean([x for x in b[ds]["predictors"][n][metric] if x is not None] or [np.nan])) for n in cands}
+        pb = (min if lower_better else max)(cands, key=means.__getitem__)
         va = dict(zip(a[ds]["test_ids"], a[ds]["predictors"][predictor][metric]))
-        vb = dict(zip(b[ds]["test_ids"], b[ds]["predictors"][predictor][metric]))
+        vb = dict(zip(b[ds]["test_ids"], b[ds]["predictors"][pb][metric]))
         d = np.array([va[i] - vb[i] for i in va if i in vb and va[i] is not None and vb[i] is not None], dtype=float)
         if not len(d):
             continue
         boots = d[rng.integers(0, len(d), size=(n_boot, len(d)))].mean(axis=1)
-        per_track[ds] = {"n": len(d), "mean": float(d.mean()), "ci": (float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975)))}
+        ci = (float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975)))
+        per_track[ds] = {"n": len(d), "mean": float(d.mean()), "ci": ci, "b": pb}
         if roles.get(ds) in ("headline", "general"):  # a predictor exists on one kind only: multi-answer or general
             diffs[ds] = d
-    out = {"predictor": predictor, "metric": metric, "tracks": per_track}
+    out = {"predictor": predictor, "predictor_b": predictor_b or predictor, "metric": metric, "tracks": per_track}
     if diffs:
         boots = np.mean([d[rng.integers(0, len(d), size=(n_boot, len(d)))].mean(axis=1) for d in diffs.values()], axis=0)
         out["macro"] = {"tracks": sorted(diffs), "mean": float(np.mean([d.mean() for d in diffs.values()])),
@@ -332,12 +344,13 @@ def compare(run_a: str | Path, run_b: str | Path, predictor: str = "pick+true_co
 
 def format_compare(res: dict, a: str, b: str) -> str:
     scale = 100.0 if res["metric"] in ("per_item_exact", "per_item_f1") else 1.0
-    lines = [f"# {a} − {b}: {res['predictor']}, {res['metric'].removeprefix('per_item_')}", "",
-             "| track | items | mean [95% CI] |", "|---|---|---|"]
+    vs = "" if res["predictor_b"] == res["predictor"] else f" vs {res['predictor_b']} (best per track)"
+    lines = [f"# {a} − {b}: {res['predictor']}{vs}, {res['metric'].removeprefix('per_item_')}", "",
+             "| track | items | B's predictor | mean [95% CI] |", "|---|---|---|---|"]
     for ds, r in res["tracks"].items():
-        lines.append(f"| {ds} | {r['n']} | {scale*r['mean']:+.2f} [{scale*r['ci'][0]:+.2f}, {scale*r['ci'][1]:+.2f}] |")
+        lines.append(f"| {ds} | {r['n']} | {r['b']} | {scale*r['mean']:+.2f} [{scale*r['ci'][0]:+.2f}, {scale*r['ci'][1]:+.2f}] |")
     if "macro" in res:
         m = res["macro"]
-        lines.append(f"| **macro ({', '.join(m['tracks'])})** | {len(m['tracks'])} tracks | **{scale*m['mean']:+.2f}** "
+        lines.append(f"| **macro ({', '.join(m['tracks'])})** | {len(m['tracks'])} tracks | | **{scale*m['mean']:+.2f}** "
                      f"[{scale*m['ci'][0]:+.2f}, {scale*m['ci'][1]:+.2f}] |")
     return "\n".join(lines)

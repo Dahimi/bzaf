@@ -18,7 +18,7 @@ options apply; together they define an exact distribution over answer sets
 | Phase | State |
 |---|---|
 | 1. Readout baselines on existing models ([E01](experiments/E01-readout-baselines/)) | ✅ done: count is the bottleneck (G1 passed); base = Kev |
-| 2. [Benchmark v0](docs/benchmark.md) ✅ built; base-family check and model study ([E01b](experiments/E01b-family-check/)), alongside the count head on Kev-0.8B ([E02](experiments/E02-count-head/)) | **next** |
+| 2. [Benchmark v0](docs/benchmark.md) ✅; base family ([E01b](experiments/E01b-family-check/)) ✅ Decision 2.0; trainer v0 ✅; count head on Eos-0.8B ([E02](experiments/E02-count-head/)) | **next** |
 | 3. Data v1 + E03 at 4B on the chosen family, then release v0.1 (4B) | planned |
 | 4. Data v2 + E04: 9B | planned |
 | 5. Release the 9B, paper, benchmark track | planned |
@@ -66,13 +66,14 @@ d.restrict_count(0, 1).mode() # with an "at most one" constraint
 ```
 docs/                 project documentation (start with the brief)
 experiments/          one folder per experiment: pre-registration, then results
-cloud/                Modal apps for model endpoints (Kev, Imajev, Vela / Decision 2.0) and the cloud runbook
+cloud/                Modal apps: model endpoints (Kev, Imajev, Vela / Decision 2.0), training (train_modal.py), runbook
 src/bzaf/
   setdist.py          answer-set distributions (count x scores), exact in log space
   readout.py          ask a decision server with existing question types (E01)
   predictors.py       untrained multi-answer predictors built from readouts
   metrics.py, score.py  set-level metrics (accuracy, calibration, selective automation), bootstrap CIs, reports
   bench.py            benchmark v0: tracks, readout plan, report, paired model comparison
+  train/              trainer: Decision 2.0 adapter (parity-tested), count head, set loss, distillation, in-process eval
   client.py           client for TypeSafe-compatible /v1/systemone servers
   data/               dataset converters: SATA-Bench, GoEmotions, UNFAIR-ToS, NLU++, ECtHR, synthetic, wide
   cli.py              `bzaf prepare | readout | score | bench`

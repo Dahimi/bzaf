@@ -1,65 +1,99 @@
-# E02 — Count head on Kev-0.8B
+# E02 — Count head on Decision 2.0 Eos-0.8B
 
-**Status:** planned (pre-registration) · **Compute:** Modal (A10G/L40S for 0.8B) · **Tracking:** W&B
+**Status:** pre-registered (revised 2026-10-08, before any run: base moved from Kev-0.8B to Eos-0.8B, [D20](../../docs/decisions.md);
+evaluation moved to [benchmark v0](../../docs/benchmark.md)) · **Compute:** Modal, one L40S · **Code:** [`src/bzaf/train/`](../../src/bzaf/train/)
 
 ## Question
 
-Does a trained count head on top of Kev's per-option scores turn multi-answer questions into good answer sets,
-beating every untrained strategy from E01 on datasets it never saw, without hurting single-answer Choice?
+Does a trained count head on top of Decision 2.0's per-option scores give better answer sets than every untrained
+strategy, on task families it never saw, without losing the base's general decision quality?
 
 ## Model
 
-Kev-0.8B (Qwen3.5-0.8B-Base + Kev's LoRA and pointer head), continued from the released checkpoint
-(`--init_from`, as Kev recommends for fine-tunes). Added:
+`vllm-sr/Decision-2.0-Eos-0.8B` (Qwen3.5-0.8B backbone + shared candidate head), the smallest model of the Nox-4B
+family, loaded by our Decision 2.0 adapter ([decision2.py](../../src/bzaf/train/decision2.py)). Checks before training:
 
-- **count head:** one linear layer on the `<decide>` hidden state → logits for counts 0..16;
-- per-option scores `z_i` from Kev's existing pointer head (unchanged structure, trained further);
-- answer-set distribution from [`bzaf.setdist`](../../src/bzaf/setdist.py): P(S) = P(|S|) · Π_{i∈S} e^{z_i} / e_|S|.
+- **parity:** on the runtime's own random-weight test package, our adapter gives the same answers as the released
+  runtime, to ~1e-17 (`tests/test_decision2_parity.py`);
+- **real weights:** our adapter on the runtime's readiness request against its recorded answers for Eos-0.8B
+  (`modal run cloud/train_modal.py::golden`); must agree to 1e-4 in FP32 before any training run.
 
-Loss: −log P(gold set). On single-answer data this is exactly Kev's cross-entropy (count fixed at 1), so Kev's own
-training data is mixed in unchanged to keep Choice intact.
+Added and trained:
 
-**Ablation (same run budget):** count head off, per-option sigmoid with binary cross-entropy (direction 2). Its set
-distribution is the independent product, decoded at 0.5.
+- a new question type, `multi`: the Decision 2.0 prompt with type name `multi` and the suffix "Select every option
+  supported by the context and instructions." (the base never saw it);
+- **count head:** LayerNorm → 256 → GELU → 33 logits (counts 0..32) on the query state, masked to the row's number of
+  options, starting uniform;
+- the released candidate head, continued (lr 5e-5); LoRA r16 / α32 on every linear layer of the backbone
+  (attention, Gated DeltaNet, MLP; lr 2e-4); count head lr 1e-3; AdamW, cosine schedule, 30 warm-up steps, one epoch,
+  ≤ 16k padded tokens per batch, bf16 autocast, seed 0.
 
-## Data
+Losses: −log P(gold set) on multi rows (exact; [losses.py](../../src/bzaf/train/losses.py)); KL(base ‖ model) on
+single-answer rows, with the base's own answers as targets (adapters off, original head), because Decision 2.0's
+training data is not public.
 
-Training (multi-answer, natural-language label names; licences checked and recorded before the first run):
+## Data (≈ 29k rows, built by [`bzaf.train.data.build_e02`](../../src/bzaf/train/data.py))
 
-| Source | Answers per item | Notes |
-|---|---|---|
-| GoEmotions train | 1–3 (mostly 1) | test split stays for evaluation (in-domain) |
-| Synthetic orders, training seeds | 0–7 | exact gold; different seeds from the evaluation set |
-| Further multi-label sets (candidates: SemEval-2018 E-c, MixATIS/MixSNIPS, MultiEURLEX level 1, Reuters) | various | added only if the licence allows; listed in the run config |
-| Kev's own single-answer data (`decision-v7`) | 1 | keeps Choice behaviour (count = 1) |
+| rows | source | loss | licence | role in benchmark v0 |
+|---|---|---|---|---|
+| 4,000 | GoEmotions train (options shuffled) | set | Apache-2.0 | in-domain (test split evaluated) |
+| 2,000 | 2–3 GoEmotions train comments merged, gold = union | set | Apache-2.0 | in-domain |
+| 3,000 | 1–4 DBpedia-14 train entries merged, a random 4–14 of the 14 classes offered (so some gold is missing: partial and "none" cases) | set | CC BY-SA 3.0 | not in the benchmark |
+| 4,000 | synthetic orders, seed 1000 | set | ours | in-domain (seed 0 evaluated) |
+| 1,000 | wide probe generator, seed 1000 (10–200 options) | set | ours | in-domain (seed 0 evaluated) |
+| 3,000 | BoolQ train (Noul) | distill | CC BY-SA 3.0 | general track uses validation |
+| 3,000 | HellaSwag train (Choice) | distill | MIT | general track uses validation |
+| 3,000 | SST-5 train (Score) | distill | research use | general track uses test |
+| 2,000 | DBpedia-14 train (Choice, 14 options) | distill | CC BY-SA 3.0 | not in the benchmark |
 
-Augmentation: shuffled option order, random subsets of each label set (creates "none" and different counts),
-paraphrased option names where available.
+**Held out (never trained on, no same-family data):** SATA, NLU++, ECtHR, UNFAIR-ToS. Training rows whose state
+appears anywhere in benchmark v0 are dropped.
 
-Evaluation, **never trained on**: SATA-Bench (400) and UNFAIR-ToS (800) as held-out datasets; GoEmotions test and a
-synthetic evaluation seed as in-domain sets; Kev's single-answer development split for the no-regression check.
-Same items and dev/test split as E01, so E01 numbers are directly comparable.
+## Evaluation
 
-## Baselines (from E01, same base model, same items)
+Benchmark v0 in-process through the same adapter (same questions as a server readout):
 
-Best untrained predictor per dataset, including `pick+dev_prior` (the dataset's typical count, the strongest
-non-item-level baseline) and `noul_ctx+platt`. Ceiling: `pick+true_count`.
+- **base:** Eos-0.8B untouched, asked with its own question types (yes/no per option, Choice, "how many", native);
+- **ours:** the trained model's `multi` question (predictor `ours@mode`: the most likely set) and the general track.
 
 ## Pre-registered decision rule
 
-- **G2 (pass → E03 on Kev-4B):** on **both** held-out datasets (SATA, UNFAIR-ToS), the trained count model beats the
-  best E01 untrained predictor for Kev-0.8B in exact-set accuracy with the 95 % paired CI above 0, **and** its
-  set log-loss is lower; **and** single-answer accuracy on Kev's dev split drops by at most 1 point.
-- **Fail on one held-out dataset only:** check count calibration on that dataset before deciding; one targeted fix,
-  then decide.
-- **Fail on both:** stop and diagnose (data mix, count head capacity, loss) before renting bigger GPUs.
-- **Ablation read-out (not a gate):** count head vs sigmoid on the same data. If the sigmoid matches the count head
-  within CIs on exact-set and log-loss, report it and prefer the simpler model (approach.md, "main ablation").
+Held-out tracks H = {sata, nlupp, ecthr, unfair_tos}. Baseline B per track = the better on test of Eos's two
+untrained references, `noul_ctx+platt` and `pick+dev_prior` (choosing on test favours the baseline).
 
-## Logged per run (W&B)
+- **G2 passes (→ the trainability check on Nox-4B, then E03) if all three hold:**
+  1. exact-set, `ours@mode` − B, macro over H: paired 95 % CI above 0;
+  2. set log-loss, `ours@mode` − B (B = the lower-log-loss of the two), macro over H: CI below 0;
+  3. general track, `native@top1` accuracy, ours − base, macro over its 7 sets: at most 1 point lower (point
+     estimate).
+- **Condition 3 fails only:** raise the distillation weight or lower the LoRA learning rate, one rerun, then decide.
+- **1 or 2 fail on some tracks only:** inspect count calibration per track; one targeted fix, then decide.
+- **1 and 2 fail on all of H:** stop and diagnose (data mix, count head, loss) before renting bigger GPUs.
 
-Code commit, dataset mix and revisions, base checkpoint revision, all hyperparameters; training loss split into count
-and option terms; per-dataset exact-set, set log-loss, count accuracy, single-answer accuracy.
+Reported, no decision attached: in-domain tracks, count accuracy, order stability, calibration and selective
+automation of `ours@mode`, the training-loss split (count vs selection).
+
+**Ablation (second run, same data and budget; to implement before it runs):** count head off, one sigmoid per option
+with binary cross-entropy (direction 2), decoded at 0.5. Read-out, not a gate: if it matches the count head within
+CIs on exact-set and log-loss, report it and prefer the simpler model.
+
+## Commands
+
+```bash
+uv run modal run cloud/train_modal.py::golden --model vllm-sr/Decision-2.0-Eos-0.8B             # adapter check, real weights
+uv run modal run cloud/train_modal.py --name e02-smoke --args "--scale 0.02 --max-steps 20 --eval-limit 20 --eval-base"
+uv run modal run cloud/train_modal.py --name e02 --args "--eval-base"
+modal volume get bzaf-runs e02 runs/
+uv run bzaf bench score runs/e02/eval/ours --out experiments/E02-count-head/results/ours
+uv run bzaf bench score runs/e02/eval/base --out experiments/E02-count-head/results/base
+H=sata,nlupp,ecthr,unfair_tos
+uv run bzaf bench compare runs/e02/eval/ours runs/e02/eval/base --predictor ours@mode \
+  --predictor-b noul_ctx+platt,pick+dev_prior --only $H > experiments/E02-count-head/results/g2-exact.md
+uv run bzaf bench compare runs/e02/eval/ours runs/e02/eval/base --predictor ours@mode \
+  --predictor-b noul_ctx+platt,pick+dev_prior --only $H --metric per_item_nll > experiments/E02-count-head/results/g2-logloss.md
+uv run bzaf bench compare runs/e02/eval/ours runs/e02/eval/base --predictor native@top1 > experiments/E02-count-head/results/g2-general.md
+cp runs/e02/train_log.jsonl runs/e02/config.json experiments/E02-count-head/results/
+```
 
 ## Results
 

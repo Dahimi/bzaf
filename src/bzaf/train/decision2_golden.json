@@ -1,0 +1,200 @@
+{
+ "source": "vllm-project/semantic-router src/model-runtime/vllm_srun/registry/golden_answers.json @246dde1 (Apache-2.0)",
+ "state": "Write a Python function that merges two sorted lists and explain its running time.",
+ "questions": {
+  "domain": {
+   "type": "choice",
+   "instructions": "Which domain does this request belong to?",
+   "criteria": {
+    "code": "Programming",
+    "math": "Mathematics",
+    "other": "Anything else"
+   }
+  },
+  "reasoning": {
+   "type": "noul",
+   "instructions": "Does answering this request need multi-step reasoning?"
+  },
+  "difficulty": {
+   "type": "score",
+   "instructions": "How difficult is this request?",
+   "criteria": [
+    "Trivial",
+    "Moderate",
+    "Hard"
+   ]
+  }
+ },
+ "models": {
+  "vllm-sr/Decision-2.0-Eos-0.8B": {
+   "revision": "3594047d69f476f1d01cf84c593e213fc3a4dfe0",
+   "cpu": {
+    "difficulty": {
+     "confidence": 0.07978820642085238,
+     "legend": {
+      "0": "Trivial",
+      "1": "Moderate",
+      "2": "Hard"
+     },
+     "probabilities": {
+      "0": 0.3222017638876133,
+      "1": 0.5071710975360212,
+      "2": 0.1706271385763656
+     },
+     "score": 0.8484253746887525,
+     "type": "score"
+    },
+    "domain": {
+     "choice": "code",
+     "confidence": 0.8072603512273151,
+     "probabilities": {
+      "code": 0.9507528791279607,
+      "math": 0.004675053690173886,
+      "other": 0.044572067181865335
+     },
+     "type": "choice"
+    },
+    "reasoning": {
+     "noul": 0.6180576311150715,
+     "type": "noul"
+    }
+   }
+  },
+  "vllm-sr/Decision-2.0-Lux-9B": {
+   "revision": "78bf3c03d9147aeb30b641edfe0e30ed04887ca5",
+   "cpu": {
+    "difficulty": {
+     "confidence": 0.23811315401666855,
+     "legend": {
+      "0": "Trivial",
+      "1": "Moderate",
+      "2": "Hard"
+     },
+     "probabilities": {
+      "0": 0.3729113704671979,
+      "1": 0.5762158569460599,
+      "2": 0.05087277258674216
+     },
+     "score": 0.6779614021195443,
+     "type": "score"
+    },
+    "domain": {
+     "choice": "code",
+     "confidence": 0.883837950750706,
+     "probabilities": {
+      "code": 0.9764993152558105,
+      "math": 0.011070498039807032,
+      "other": 0.012430186704382553
+     },
+     "type": "choice"
+    },
+    "reasoning": {
+     "noul": 0.48219021937124484,
+     "type": "noul"
+    }
+   }
+  },
+  "vllm-sr/Decision-2.0-Nox-4B": {
+   "revision": "25e8f67d1b486c647222df3aac640d2d5d736bbe",
+   "cpu": {
+    "difficulty": {
+     "confidence": 0.14163123369968877,
+     "legend": {
+      "0": "Trivial",
+      "1": "Moderate",
+      "2": "Hard"
+     },
+     "probabilities": {
+      "0": 0.4550353957798847,
+      "1": 0.44881820647248605,
+      "2": 0.09614639774762913
+     },
+     "score": 0.6411110019677443,
+     "type": "score"
+    },
+    "domain": {
+     "choice": "code",
+     "confidence": 0.7651431760912495,
+     "probabilities": {
+      "code": 0.943033922409099,
+      "math": 0.02807179096914546,
+      "other": 0.028894286621755503
+     },
+     "type": "choice"
+    },
+    "reasoning": {
+     "noul": 0.5652491920141833,
+     "type": "noul"
+    }
+   }
+  },
+  "vllm-sr/Decision-2.0-Sol-2B": {
+   "revision": "64235bef55dad29387dd16da7c90e038bf2f0972",
+   "cpu": {
+    "difficulty": {
+     "confidence": 0.23638098938983232,
+     "legend": {
+      "0": "Trivial",
+      "1": "Moderate",
+      "2": "Hard"
+     },
+     "probabilities": {
+      "0": 0.4167785764440325,
+      "1": 0.5377419368091481,
+      "2": 0.04547948674681942
+     },
+     "score": 0.6287009103027869,
+     "type": "score"
+    },
+    "domain": {
+     "choice": "code",
+     "confidence": 0.8177358663792045,
+     "probabilities": {
+      "code": 0.9585655404082275,
+      "math": 0.016277158537898687,
+      "other": 0.02515730105387385
+     },
+     "type": "choice"
+    },
+    "reasoning": {
+     "noul": 0.45681670238065425,
+     "type": "noul"
+    }
+   }
+  },
+  "vllm-sr/Decision-2.0-Vega-27B": {
+   "revision": "7aec49ae11a18741706da549ab626b9052795fe7",
+   "cpu": {
+    "difficulty": {
+     "confidence": 0.1461409687755627,
+     "legend": {
+      "0": "Trivial",
+      "1": "Moderate",
+      "2": "Hard"
+     },
+     "probabilities": {
+      "0": 0.27274310036438915,
+      "1": 0.590121015699521,
+      "2": 0.13713588393608983
+     },
+     "score": 0.8643927835717007,
+     "type": "score"
+    },
+    "domain": {
+     "choice": "code",
+     "confidence": 0.5909771466291622,
+     "probabilities": {
+      "code": 0.8802631566635724,
+      "math": 0.05835891766067234,
+      "other": 0.061377925675755195
+     },
+     "type": "choice"
+    },
+    "reasoning": {
+     "noul": 0.6855986059751719,
+     "type": "noul"
+    }
+   }
+  }
+ }
+}

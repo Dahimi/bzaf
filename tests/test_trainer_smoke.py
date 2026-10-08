@@ -1,0 +1,71 @@
+"""End to end on the runtime's tiny random Decision 2.0 package: mixture rows -> a few training steps -> in-process
+benchmark evaluation -> scoring with our set predictor. Skipped without torch, transformers, peft and vllm-srun."""
+import json
+import random
+
+import pytest
+
+torch = pytest.importorskip("torch")
+pytest.importorskip("transformers")
+pytest.importorskip("peft")
+pytest.importorskip("vllm_srun")
+
+
+def test_train_then_evaluate_offline(tmp_path):
+    from vllm_srun.testing.fixtures import write_package
+
+    from bzaf import bench
+    from bzaf.data import load_synthetic
+    from bzaf.schema import Item, write_items
+    from bzaf.train.data import TrainRow, multi_question, native_question, shuffled
+    from bzaf.train.trainer import TrainConfig, train
+
+    pkg = write_package(tmp_path / "pkg", backbone="qwen3_5", seed=1)
+    bench_dir = tmp_path / "bench"
+    write_items(load_synthetic(n=12, seed=0), bench_dir / "synthetic.jsonl")
+    general = [Item(f"g{i}", "boolq", f"passage {i}", "Is it true?", ["no", "yes"], [i % 2], {"qtype": "noul"}) for i in range(8)]
+    write_items(general, bench_dir / "boolq.jsonl")
+
+    rng = random.Random(0)
+    rows = [TrainRow(it.id, "synthetic", "set", it.state, multi_question(it), it.gold)
+            for it in (shuffled(x, rng) for x in load_synthetic(n=16, seed=5))]
+    rows += [TrainRow(it.id, "boolq", "distill", it.state, native_question(it), it.gold) for it in general]
+    cfg = TrainConfig(base=str(pkg), out=str(tmp_path / "run"), bench=str(bench_dir), max_steps=6, warmup_steps=2,
+                      max_tokens=4096, eval_base=True, log_every=2, lr_count=1e-2)
+    res = train(cfg, device="cpu", rows=rows, log=lambda *_: None)
+    assert res["steps"] == 6
+    log = [json.loads(line) for line in (tmp_path / "run" / "train_log.jsonl").read_text().splitlines()]
+    assert all("tokens_per_s" in r for r in log)
+    assert (tmp_path / "run" / "adapter" / "adapter_config.json").exists() and (tmp_path / "run" / "heads.pt").exists()
+
+    ours = bench.score(tmp_path / "run" / "eval" / "ours")
+    base = bench.score(tmp_path / "run" / "eval" / "base")
+    assert "ours@mode" in ours["main"]["synthetic"]["predictors"]
+    assert "native@top1" in ours["main"]["boolq"]["predictors"]
+    assert "pick+dev_prior" in base["main"]["synthetic"]["predictors"]     # the base was asked its own question types
+
+
+def test_e02_mixture_offline(tmp_path):
+    """The mixture builder with small offline sources: set rows are shuffled multi questions with valid gold sets,
+    merged rows combine several texts, distill rows keep their native type, and benchmark states are dropped."""
+    from bzaf.data import load_synthetic
+    from bzaf.schema import Item, write_items
+    from bzaf.train.data import build_e02
+
+    emo = [Item(f"e{i}", "goemotions", f"comment {i}", "Which emotions?", ["joy", "anger", "fear", "neutral"], [i % 4]) for i in range(40)]
+    db = [Item(f"d{i}", "dbpedia", f"entry {i}", "Which category?", ["film", "album", "plant", "village"], [i % 4], {"qtype": "choice"})
+          for i in range(40)]
+    yn = [Item(f"b{i}", "boolq", f"passage {i}", "Is it?", ["no", "yes"], [i % 2], {"qtype": "noul"}) for i in range(10)]
+    bench = tmp_path / "bench"
+    write_items([emo[0]], bench / "goemotions.jsonl")                       # this state must not be trained on
+    loaders = {"goemotions": lambda: emo, "dbpedia": lambda: db, "boolq": lambda: yn, "hellaswag": lambda: [],
+               "sst5": lambda: [], "synthetic": lambda: load_synthetic(n=10, seed=3), "wide": lambda: []}
+    sizes = {"goemotions": 40, "goemotions_merged": 10, "dbpedia_merged": 10, "synthetic": 10, "wide": 0,
+             "boolq_distill": 10, "hellaswag_distill": 0, "sst5_distill": 0, "dbpedia_distill": 5}
+    rows = build_e02(0, sizes, bench, loaders=loaders, log=lambda *_: None)
+    assert not any(r.state == "comment 0" for r in rows)
+    sets = [r for r in rows if r.loss == "set"]
+    assert all(r.question["type"] == "multi" and all(0 <= g < len(r.question["criteria"]) for g in r.gold) for r in sets)
+    merged = [r for r in sets if r.source == "goemotions_merged"]
+    assert merged and all("Comment 2:" in r.state for r in merged)
+    assert {r.question["type"] for r in rows if r.loss == "distill"} == {"noul", "choice"}

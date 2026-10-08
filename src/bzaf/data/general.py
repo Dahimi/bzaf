@@ -108,33 +108,36 @@ def load_anli(limit: int | None = 300, seed: int = 0) -> list[Item]:
     return sample(items, limit, seed)
 
 
-def load_hellaswag(limit: int | None = 300, seed: int = 0) -> list[Item]:
+def load_hellaswag(limit: int | None = 300, seed: int = 0, split: str = "validation") -> list[Item]:
     from datasets import load_dataset
 
     items = []
-    for i, row in enumerate(load_dataset("Rowan/hellaswag", split="validation")):
+    for i, row in enumerate(load_dataset("Rowan/hellaswag", split=split)):
         endings = [e.strip() for e in row["endings"]]
         if len(set(endings)) != len(endings) or str(row["label"]) == "":
             continue
         state = f"{row['activity_label']}: {row['ctx']}"
-        items.append(_item(f"hellaswag:{i}", "hellaswag", state, "Which ending continues the text most plausibly?",
+        id_ = f"hellaswag:{i}" if split == "validation" else f"hellaswag:{split}:{i}"
+        items.append(_item(id_, "hellaswag", state, "Which ending continues the text most plausibly?",
                            _lettered(endings), int(row["label"])))
     return sample(items, limit, seed)
 
 
-def load_boolq(limit: int | None = 300, seed: int = 0) -> list[Item]:
+def load_boolq(limit: int | None = 300, seed: int = 0, split: str = "validation") -> list[Item]:
     from datasets import load_dataset
 
-    items = [_item(f"boolq:{i}", "boolq", row["passage"], row["question"].strip().capitalize() + "?", ["no", "yes"],
+    items = [_item(f"boolq:{i}" if split == "validation" else f"boolq:{split}:{i}", "boolq", row["passage"],
+                   row["question"].strip().capitalize() + "?", ["no", "yes"],
                    int(bool(row["answer"])), qtype="noul")
-             for i, row in enumerate(load_dataset("google/boolq", split="validation"))]
+             for i, row in enumerate(load_dataset("google/boolq", split=split))]
     return sample(items, limit, seed)
 
 
-def load_sst5(limit: int | None = 300, seed: int = 0) -> list[Item]:
+def load_sst5(limit: int | None = 300, seed: int = 0, split: str = "test") -> list[Item]:
     from datasets import load_dataset
 
-    items = [_item(f"sst5:{i}", "sst5", row["text"], "How positive is the sentiment of this text?", SST5_LEVELS,
+    items = [_item(f"sst5:{i}" if split == "test" else f"sst5:{split}:{i}", "sst5", row["text"],
+                   "How positive is the sentiment of this text?", SST5_LEVELS,
                    int(row["label"]), qtype="score")
-             for i, row in enumerate(load_dataset("SetFit/sst5", split="test"))]
+             for i, row in enumerate(load_dataset("SetFit/sst5", split=split))]
     return sample(items, limit, seed)
