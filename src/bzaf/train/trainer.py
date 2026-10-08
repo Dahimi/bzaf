@@ -156,7 +156,8 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
             if step >= total:
                 break
             exs = [examples[i] for i in idx]
-            batch = {k: v.to(device) for k, v in collate([e.row for e in exs], tok.pad_id).items()}
+            # lengths rounded up to 128: few distinct shapes, so the Gated DeltaNet kernels tune once, not per batch
+            batch = {k: v.to(device) for k, v in collate([e.row for e in exs], tok.pad_id, multiple=128).items()}
             for g, lr in zip(opt.param_groups, base_lrs):
                 g["lr"] = lr * lr_scale(step)
             with torch.autocast(device_type=torch.device(device).type, dtype=torch.bfloat16, enabled=device != "cpu"):
@@ -186,7 +187,9 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
                 avg = {k: sum(w[k] for w in window if k in w) / max(1, sum(k in w for w in window))
                        for k in {k for w in window for k in w}}
                 rec = {"step": step, "of": total, "lr_scale": round(lr_scale(step), 4),
-                       "tokens_per_s": round(tokens / (time.perf_counter() - t0)), **{k: round(v, 4) for k, v in avg.items()}}
+                       "tokens_per_s": round(tokens / (time.perf_counter() - t0)),
+                       "eta_min": round((time.perf_counter() - t0) / step * (total - step) / 60, 1),
+                       **{k: round(v, 4) for k, v in avg.items()}}
                 log_file.write(json.dumps(rec) + "\n")
                 log_file.flush()
                 log(json.dumps(rec))

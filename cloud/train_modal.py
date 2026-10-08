@@ -6,7 +6,7 @@ are uploaded; weights are cached on the bzaf-model-cache volume, runs are writte
 
     # 2. a training run (a smoke run first: tiny mixture, few steps, 20 items per track)
     modal run cloud/train_modal.py --name e02-smoke --args "--scale 0.02 --max-steps 20 --eval-limit 20 --eval-base"
-    modal run cloud/train_modal.py --name e02 --args "--eval-base"
+    modal run --detach cloud/train_modal.py --name e02 --args "--eval-base"   # --detach: survives a closed terminal
 
     # 3. fetch the evaluation records and score them like any readout
     modal volume get bzaf-runs e02/eval runs/e02/
@@ -42,7 +42,8 @@ runs = modal.Volume.from_name("bzaf-runs", create_if_missing=True)
 app = modal.App("bzaf-train")
 
 
-@app.function(image=image, gpu=GPU, volumes={"/cache": cache, "/runs": runs}, cpu=8, memory=65536, timeout=6 * 3600)
+# timeout: Modal's maximum (24 h); a run that hit a shorter one would lose its evaluation
+@app.function(image=image, gpu=GPU, volumes={"/cache": cache, "/runs": runs}, cpu=8, memory=65536, timeout=24 * 3600)
 def train(name: str, args: str = "") -> dict:
     from bzaf.train.trainer import main
 
