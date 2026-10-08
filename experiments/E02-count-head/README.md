@@ -41,7 +41,7 @@ training data is not public.
 
 | rows | source | loss | licence | role in benchmark v0 |
 |---|---|---|---|---|
-| 4,000 | GoEmotions train (options shuffled) | set | Apache-2.0 | in-domain (test split evaluated) |
+| 4,000 | GoEmotions train (options shuffled; half offer a random 4–20 of the 28 emotions, each gold kept at p = 0.5) | set | Apache-2.0 | in-domain (test split evaluated) |
 | 2,000 | 2–3 GoEmotions train comments merged, gold = union | set | Apache-2.0 | in-domain |
 | 3,000 | 1–4 DBpedia-14 train entries merged, a random 4–14 of the 14 classes offered (so some gold is missing: partial and "none" cases) | set | CC BY-SA 3.0 | not in the benchmark |
 | 4,000 | synthetic orders, seed 1000 | set | ours | in-domain (seed 0 evaluated) |
@@ -50,6 +50,8 @@ training data is not public.
 | 3,000 | HellaSwag train (Choice) | distill | MIT | general track uses validation |
 | 3,000 | SST-5 train (Score) | distill | research use | general track uses test |
 | 2,000 | DBpedia-14 train (Choice, 14 options) | distill | CC BY-SA 3.0 | not in the benchmark |
+
+*Changed 2026-10-08 after the smoke run (20 steps, a pipeline check, not the experiment), before the full run:* the option-subset augmentation of [approach.md](../../docs/approach.md) was only applied to DBpedia, so 3 % of set rows had an empty answer and the smoke model almost never answered "none" (UNFAIR-ToS, 12 items: mean answer size 1.17 vs 0.17). It now also applies to half the GoEmotions rows: 8.7 % of set rows are empty. No other change.
 
 **Held out (never trained on, no same-family data):** SATA, NLU++, ECtHR, UNFAIR-ToS. Training rows whose state
 appears anywhere in benchmark v0 are dropped.

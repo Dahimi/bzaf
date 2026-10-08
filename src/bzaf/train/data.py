@@ -62,6 +62,24 @@ def shuffled(item: Item, rng: random.Random) -> Item:
                 [j for j, i in enumerate(order) if i in gold], meta)
 
 
+def option_subset(item: Item, rng: random.Random, size_range: tuple[int, int], keep_gold: float) -> Item:
+    """The same item offering a random subset of its options; each gold option survives with probability `keep_gold`,
+    so some items lose part or all of their answer ("none" cases) and the number of options varies (approach.md,
+    augmentation)."""
+    gold = set(item.gold)
+    keep = [i for i in item.gold if rng.random() < keep_gold]
+    rest = [i for i in range(len(item.options)) if i not in gold]
+    m = rng.randint(*size_range)
+    idx = sorted(keep + rng.sample(rest, max(0, min(len(rest), m - len(keep)))))
+    if len(idx) < 2:  # a question needs at least two options
+        idx = sorted(set(idx) | set(rng.sample(rest, 2 - len(idx))))
+    meta = dict(item.meta)
+    if "descriptions" in meta:
+        meta["descriptions"] = [meta["descriptions"][i] for i in idx]
+    return Item(item.id, item.dataset, item.state, item.question, [item.options[i] for i in idx],
+                [j for j, i in enumerate(idx) if i in gold], meta)
+
+
 def merged(items: list[Item], n: int, rng: random.Random, name: str, question: str, label: str,
            k_range: tuple[int, int], option_range: tuple[int, int] | None = None) -> list[Item]:
     """Multi-answer items made of 1..k single items: the state lists the texts, the gold is the union of their labels.
@@ -137,7 +155,11 @@ def build_e02(seed: int = 0, sizes: dict | None = None, bench_dir: str | Path | 
         log(f"  {source}: {kept} rows")
 
     if sizes.get("goemotions"):
-        add(get("goemotions"), "goemotions", "set", sizes["goemotions"])
+        # half the items offer all 28 emotions, half a random 4-20 of them with each gold kept at p = 0.5: partial
+        # answers and "none" (GoEmotions itself never has an empty answer, and E02's smoke run showed the count head
+        # then rarely predicts 0)
+        emo = [it if rng.random() < 0.5 else option_subset(it, rng, (4, 20), 0.5) for it in get("goemotions")]
+        add(emo, "goemotions", "set", sizes["goemotions"])
     if sizes.get("goemotions_merged"):
         add(merged(get("goemotions"), sizes["goemotions_merged"], rng, "goemotions_merged",
                    "Which emotions do the authors of these comments express?", "Comment", (2, 3)),

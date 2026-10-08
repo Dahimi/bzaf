@@ -69,3 +69,21 @@ def test_e02_mixture_offline(tmp_path):
     merged = [r for r in sets if r.source == "goemotions_merged"]
     assert merged and all("Comment 2:" in r.state for r in merged)
     assert {r.question["type"] for r in rows if r.loss == "distill"} == {"noul", "choice"}
+
+
+def test_option_subset_keeps_gold_consistent():
+    import random
+
+    from bzaf.schema import Item
+    from bzaf.train.data import option_subset
+
+    it = Item("x", "d", "s", "q", [f"o{i}" for i in range(28)], [3, 7], {"descriptions": [f"d{i}" for i in range(28)]})
+    rng = random.Random(0)
+    sizes, empty = [], 0
+    for _ in range(300):
+        sub = option_subset(it, rng, (4, 20), 0.5)
+        assert 2 <= len(sub.options) <= 20 and set(sub.options) <= set(it.options)
+        assert {sub.options[g] for g in sub.gold} == {"o3", "o7"} & set(sub.options)
+        assert all(sub.meta["descriptions"][j] == "d" + sub.options[j][1:] for j in range(len(sub.options)))
+        sizes.append(len(sub.options)); empty += not sub.gold
+    assert 0.15 < empty / 300 < 0.4 and len(set(sizes)) > 5
