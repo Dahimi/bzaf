@@ -7,7 +7,9 @@
 1. **Generality first.** The model must stay a general decision model (Choice, yes/no, Score) and gain multi-answer.
    Every training mix contains single-answer data (the base's own, for replay) next to multi-answer data.
 2. **Zero-shot claims need held-out families.** Whole task families (not just items) are kept out of training and used
-   only for evaluation: currently SATA-Bench and UNFAIR-ToS.
+   only for evaluation ([D21](decisions.md)): SATA-Bench's six families (story reading comprehension with candidate
+   answers, toxicity categories, news topics, MeSH headings, EUR-Lex concepts, business-news events), legal texts
+   (UNFAIR-ToS, ECtHR), and intent detection (NLU++, CLINC150).
 3. **Every row is traceable:** source, licence, generator (dataset, program or teacher model + provider + prompt
    version), and the stage it belongs to.
 4. **Contamination checks** against every evaluation set (ours, public JevBench items, Decision Index) before training.

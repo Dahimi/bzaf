@@ -150,3 +150,16 @@ after E02. If it fails, we fall back to Kev, whose adapter is the second one to 
 *Lineage:* the Decision 2.0 cards state Apache-2.0 but not the training data or teacher models. Accepted as a known
 risk for development (published by the vLLM Semantic Router project, Apache-2.0 weights); before release we ask the
 authors to confirm that no Jev outputs or restricted-teacher outputs were used (D4), and state the answer in our card.
+
+## D21 — Strict family hold-out (2026-10-08)
+The held-out tracks keep their whole task families out of training, not only their source datasets, as E02
+pre-registered ("no same-family data"). SATA-Bench turned out to be six families (story reading comprehension with
+candidate answers, toxicity categories, news topics, MeSH headings, EUR-Lex concepts, business-news event types; see
+[benchmark.md](benchmark.md)), so the held-out families are: those six, legal texts (UNFAIR-ToS, ECtHR, EUR-Lex,
+contracts), and intent detection in customer messages (NLU++, CLINC150). Boundary: the same decision over the same kind
+of label set and the same text genre. Subject tagging of other genres (arXiv, patents, Stack Exchange; DBpedia-14 was
+already used in E02) is kept but measured: the first mix trains with and without it and reports SATA per subset.
+Sources allowed only under a looser rule (MAVEN, DROP / TAT-QA multi-span, hate-speech target sets) may appear in a
+separate "seen-family" run, reported apart, never in the main line. Teacher data must not recreate a held-out family.
+Why: only a family-level hold-out tests whether a better data mix fixes E02's failure to transfer across families;
+loosening the rule after seeing E02's result would weaken every zero-shot claim.
