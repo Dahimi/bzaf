@@ -49,6 +49,8 @@ class TrainConfig:
     eval_limit: int | None = None  # items per track (smoke tests)
     eval_tracks: list | None = None
     log_every: int = 10
+    save_every: int = 200          # steps between checkpoints (adapter, heads, optimizer, step)
+    resume: bool = False           # continue from <out>/checkpoint.pt (same data order), or skip to evaluation
 
 
 @dataclass
@@ -108,7 +110,10 @@ def build_model(cfg: TrainConfig, device: str):
     return model.to(device), pkg, tok
 
 
-def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | None = None, log=print) -> dict:
+def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | None = None, log=print,
+          on_checkpoint=None) -> dict:
+    """`on_checkpoint()` is called after every checkpoint and evaluation file (Modal: commit the volume, so an
+    interrupted run keeps them)."""
     from . import evaluate
     from .decision2 import collate
 
@@ -142,10 +147,35 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
             return (step + 1) / cfg.warmup_steps
         return 0.5 * (1 + math.cos(math.pi * min(1.0, (step - cfg.warmup_steps) / max(1, total - cfg.warmup_steps))))
 
+    ckpt_path = out / "checkpoint.pt"
+    trainable = {n: p for n, p in model.named_parameters() if p.requires_grad}
+    skip, done = 0, False
+    if cfg.resume and ckpt_path.exists():
+        ck = torch.load(ckpt_path, map_location=device)
+        missing = set(trainable) - set(ck["trainable"])
+        if missing:
+            raise ValueError(f"checkpoint lacks {len(missing)} parameters, e.g. {sorted(missing)[0]}")
+        with torch.no_grad():
+            for n, p in trainable.items():
+                p.copy_(ck["trainable"][n].to(p.device, p.dtype))
+        opt.load_state_dict(ck["optimizer"])
+        skip, done = ck["step"], ck.get("done", False)
+        log(f"resumed from step {skip}" + (" (training finished; evaluation only)" if done else ""))
+
+    def save_checkpoint(step: int, finished: bool = False) -> None:
+        tmp = ckpt_path.with_suffix(".tmp")
+        torch.save({"step": step, "done": finished, "optimizer": opt.state_dict(),
+                    "trainable": {n: p.detach().cpu() for n, p in trainable.items()}}, tmp)
+        os.replace(tmp, ckpt_path)
+        if on_checkpoint:
+            on_checkpoint()
+
     model.train()
-    log_file = (out / "train_log.jsonl").open("w")
+    log_file = (out / "train_log.jsonl").open("a" if skip else "w")
     step, t0, tokens, window = 0, time.perf_counter(), 0, []
     first = True
+    if done:
+        step = total
     while step < total:
         batches = make_batches(examples, cfg.max_tokens, rng)
         if first:  # the largest batch first: a run that does not fit in memory fails in its first step, not hours later
@@ -155,6 +185,9 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
         for idx in batches:
             if step >= total:
                 break
+            if step < skip:  # resuming: replay the same batch order without computing
+                step += 1
+                continue
             exs = [examples[i] for i in idx]
             # lengths rounded up to 128: few distinct shapes, so the Gated DeltaNet kernels tune once, not per batch
             batch = {k: v.to(device) for k, v in collate([e.row for e in exs], tok.pad_id, multiple=128).items()}
@@ -188,28 +221,32 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
                        for k in {k for w in window for k in w}}
                 rec = {"step": step, "of": total, "lr_scale": round(lr_scale(step), 4),
                        "tokens_per_s": round(tokens / (time.perf_counter() - t0)),
-                       "eta_min": round((time.perf_counter() - t0) / step * (total - step) / 60, 1),
+                       "eta_min": round((time.perf_counter() - t0) / (step - skip) * (total - step) / 60, 1),
                        **{k: round(v, 4) for k, v in avg.items()}}
                 log_file.write(json.dumps(rec) + "\n")
                 log_file.flush()
                 log(json.dumps(rec))
                 window = []
+            if step % cfg.save_every == 0 and step < total:
+                save_checkpoint(step)
     log_file.close()
+    if not done:
+        save_checkpoint(total, finished=True)
 
     model.backbone.save_pretrained(out / "adapter")
     torch.save({"head": model.head.state_dict(), "count_head": model.count_head.state_dict()}, out / "heads.pt")
     model.eval()
     log("evaluating the trained model")
     evaluate.run(model, pkg, tok, cfg.bench, out / "eval" / "ours", "ours", device, tracks=cfg.eval_tracks,
-                 limit=cfg.eval_limit, log=log)
+                 limit=cfg.eval_limit, log=log, on_track=on_checkpoint)
     if cfg.eval_base:  # after training, so a training failure costs minutes; the base = adapters off + original head
         log("evaluating the base model (untrained baselines)")
         evaluate.run(model, pkg, tok, cfg.bench, out / "eval" / "base", "base", device, tracks=cfg.eval_tracks,
-                     limit=cfg.eval_limit, base=True, log=log)
-    return {"steps": step, "seconds": round(time.perf_counter() - t0), "out": str(out)}
+                     limit=cfg.eval_limit, base=True, log=log, on_track=on_checkpoint)
+    return {"steps": step, "resumed_from": skip, "seconds": round(time.perf_counter() - t0), "out": str(out)}
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, on_checkpoint=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     for f in TrainConfig.__dataclass_fields__.values():
         if f.name in ("sizes", "eval_tracks"):
@@ -227,10 +264,7 @@ def main(argv: list[str] | None = None) -> int:
     kw = {k: v for k, v in vars(a).items() if k in TrainConfig.__dataclass_fields__ and k != "eval_tracks"}
     cfg = TrainConfig(**kw, sizes={k: max(1, int(v * a.scale)) for k, v in E02_SIZES.items()},
                       eval_tracks=a.eval_tracks.split(",") if a.eval_tracks else None)
-    if os.environ.get("BZAF_DEVICE"):
-        print(train(cfg, os.environ["BZAF_DEVICE"]))
-    else:
-        print(train(cfg))
+    print(train(cfg, os.environ.get("BZAF_DEVICE"), on_checkpoint=on_checkpoint))
     return 0
 
 

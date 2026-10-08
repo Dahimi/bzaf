@@ -68,7 +68,7 @@ def answer_items(model: Decision2Model, pkg: Package, tok: Tokenizer, items: lis
 
 def run(model: Decision2Model, pkg: Package, tok: Tokenizer, bench: str | Path, out: str | Path, name: str, device: str,
         variants_for: dict[str, list[str]] | None = None, tracks: list[str] | None = None, limit: int | None = None,
-        base: bool = False, log=print) -> Path:
+        base: bool = False, log=print, on_track=None) -> Path:
     """Write <out>/<track>.jsonl for every part of the benchmark plan, with the given variants per track
     (default: ours = multi on multi-answer tracks, native on the general track)."""
     import json
@@ -89,10 +89,18 @@ def run(model: Decision2Model, pkg: Package, tok: Tokenizer, bench: str | Path, 
             variants = ["multi"]
         variants = (variants_for or {}).get(stem, variants)
         items = list(read_items(items_file))[:limit]
+        target = out / f"{stem}.jsonl"
+        if target.exists() and sum(1 for _ in target.open()) == len(items):  # already done (a resumed run)
+            log(f"  eval {stem}: kept ({len(items)} items)")
+            continue
         recs = answer_items(model, pkg, tok, items, variants, device, base=base)
-        with (out / f"{stem}.jsonl").open("w") as f:
+        tmp = target.with_suffix(".tmp")
+        with tmp.open("w") as f:
             for r in recs:
                 r["model"] = name
                 f.write(json.dumps(r) + "\n")
+        tmp.replace(target)
         log(f"  eval {stem}: {len(recs)} items ({','.join(variants)})")
+        if on_track:
+            on_track()
     return out

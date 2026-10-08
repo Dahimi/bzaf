@@ -7,6 +7,7 @@ are uploaded; weights are cached on the bzaf-model-cache volume, runs are writte
     # 2. a training run (a smoke run first: tiny mixture, few steps, 20 items per track)
     modal run cloud/train_modal.py --name e02-smoke --args "--scale 0.02 --max-steps 20 --eval-limit 20 --eval-base"
     modal run --detach cloud/train_modal.py --name e02 --args "--eval-base"   # --detach: survives a closed terminal
+    modal run --detach cloud/train_modal.py --name e02 --args "--eval-base --resume"   # after an interruption
 
     # 3. fetch the evaluation records and score them like any readout
     modal volume get bzaf-runs e02/eval runs/e02/
@@ -51,7 +52,7 @@ def train(name: str, args: str = "") -> dict:
     print("args:", argv, flush=True)
     subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"], check=False)
     try:
-        main(argv)
+        main(argv, on_checkpoint=runs.commit)   # checkpoints and finished evaluation files survive an interruption
     except Exception as e:  # re-raised as plain text: the local side has no torch to unpickle torch exceptions
         import traceback
 

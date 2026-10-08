@@ -87,3 +87,45 @@ def test_option_subset_keeps_gold_consistent():
         assert all(sub.meta["descriptions"][j] == "d" + sub.options[j][1:] for j in range(len(sub.options)))
         sizes.append(len(sub.options)); empty += not sub.gold
     assert 0.15 < empty / 300 < 0.4 and len(set(sizes)) > 5
+
+
+def test_interrupted_run_resumes_to_the_same_weights(tmp_path):
+    """Training stopped right after the step-3 checkpoint and resumed ends with the same weights as an uninterrupted
+    run (same data order, restored optimizer); a resume after training finished skips straight to evaluation."""
+    import random
+
+    from vllm_srun.testing.fixtures import write_package
+
+    from bzaf.data import load_synthetic
+    from bzaf.train.data import TrainRow, multi_question, shuffled
+    from bzaf.train.trainer import TrainConfig, train
+
+    pkg = write_package(tmp_path / "pkg", backbone="qwen3_5", seed=1)
+    rng = random.Random(0)
+    rows = [TrainRow(it.id, "synthetic", "set", it.state, multi_question(it), it.gold)
+            for it in (shuffled(x, rng) for x in load_synthetic(n=24, seed=5))]
+
+    def cfg(out, **kw):
+        return TrainConfig(base=str(pkg), out=str(tmp_path / out), bench=str(tmp_path / "nobench"), max_steps=6,
+                           warmup_steps=2, max_tokens=2048, log_every=1, save_every=3, lr_count=1e-2, **kw)
+
+    def weights(out):
+        return torch.load(tmp_path / out / "checkpoint.pt")["trainable"]
+
+    train(cfg("full"), device="cpu", rows=rows, log=lambda *_: None)
+
+    class Stop(Exception):
+        pass
+
+    def stop():
+        raise Stop
+
+    with pytest.raises(Stop):
+        train(cfg("cut"), device="cpu", rows=rows, log=lambda *_: None, on_checkpoint=stop)
+    assert torch.load(tmp_path / "cut" / "checkpoint.pt")["step"] == 3
+    res = train(cfg("cut", resume=True), device="cpu", rows=rows, log=lambda *_: None)
+    assert res["resumed_from"] == 3 and res["steps"] == 6
+    a, b = weights("full"), weights("cut")
+    assert all(torch.allclose(a[n], b[n], atol=1e-6) for n in a)
+    again = train(cfg("cut", resume=True), device="cpu", rows=rows, log=lambda *_: None)
+    assert again["resumed_from"] == 6
