@@ -122,5 +122,58 @@ cp runs/e02-sigmoid/train_log.jsonl $R/sigmoid-train_log.jsonl
 
 ## Results
 
-*Main run done 2026-10-08 (651 steps, 24,913 rows: 13,999 set, 10,914 distill; ~10M tokens; 30 min training at
-~5.7k tokens/s and 33 min evaluating ours + base on one L40S, about $3). Scores pending.*
+Main run 2026-10-08: 651 steps, 24,913 rows (13,999 set, 10,914 distill), ~10M tokens; ~30 min training at ~5.7k
+tokens/s and ~33 min evaluating ours + base on one L40S, about $3. Files in [results/](results/): scores
+(`ours.md`, `base.md`), the three G2 comparisons (`g2-*.md`), training log and config, raw answers
+(`eval-records.tgz`), and the diagnosis below (`diagnosis.md`, from [diagnose.py](diagnose.py)).
+
+### G2: failed
+
+| condition | result | |
+|---|---|---|
+| 1. exact-set, `ours@mode` − B, macro over H | **−21.5** [−23.7, −19.3]: ECtHR +2.8 [−2.8, +8.3], NLU++ +1.9 [−2.8, +6.8], SATA −8.5 [−10.4, −6.7], UNFAIR-ToS −82.0 [−86.0, −77.6] | fails |
+| 2. set log-loss, `ours@mode` − B, macro over H | **+1.82** [+1.72, +1.91], worse on all four tracks | fails |
+| 3. general track, `native@top1`, ours − base, macro over 7 sets | **−0.11** [−1.28, +1.05] (largest drop BBH −5.0 [−10.1, 0.0]) | passes |
+
+Pre-registered branch: condition 2 fails on every held-out track and condition 1 on two of them, so **stop and
+diagnose before renting bigger GPUs**. No 4B run.
+
+Reported, no decision attached. In-domain tracks, exact-set (best base predictor in brackets): GoEmotions 51.6 (24.8),
+synthetic 88.3 (43.9), wide 95.3 (17.2). Option order shuffled, answers unchanged: GoEmotions 87 %, NLU++ 84 %,
+SATA 71 % (base `pick+dev_prior` 84 / 82 / 67 %).
+
+### Diagnosis
+
+Test splits; "ranking + true count" keeps as many top options as the gold set has.
+
+| track | gold size (share empty) | ours: E[size] / P(0) | ranking + true count: ours / base | count ↔ gold rank corr.: ours / base "how many" / base Σ yes-no | "none" AUC: ours P(0) / base |
+|---|---|---|---|---|---|
+| ECtHR | 1.09 (12 %) | 1.40 / 0.03 | 62.2 / 64.5 | +0.07 / +0.04 / +0.02 | 0.43 / 0.45 |
+| NLU++ | 1.93 (14 %) | 1.02 / 0.13 | 54.0 / 53.1 | +0.52 / +0.22 / +0.28 | 0.95 / 0.92 |
+| SATA | 3.60 (0 %) | 2.01 / 0.01 | 35.9 / 36.1 | −0.08 / +0.67 / +0.59 | — |
+| UNFAIR-ToS | 0.13 (88 %) | 1.29 / 0.04 | 98.2 / 97.9 | +0.16 / +0.18 / +0.19 | 0.86 / 0.88 |
+| GoEmotions (in-domain) | 1.18 (0 %) | 1.03 / 0.12 | 58.1 / 28.8 | +0.08 / +0.09 / +0.08 | — |
+
+1. **Selection did not move on held-out tracks.** With the true count, ours and base pick the same sets (within
+   ~2 points) on all four; in-domain, training doubled it (GoEmotions 58.1 vs 28.8). The adapters learned the trained
+   families, not a general skill, and did no harm elsewhere.
+2. **The count failed: it reproduces the training count distribution** (mostly 1–3, 8.7 % empty) instead of each
+   task's. UNFAIR-ToS is 88 % "none" but the model gives "none" 4 % probability on average; SATA averages 3.6 answers,
+   the model 2.0; NLU++ 1.9 vs 1.0.
+3. **Where the count has signal, the level is wrong (a prior shift).** On UNFAIR-ToS and NLU++ the model's P(0)
+   separates "none" items well (AUC 0.86, 0.95), and on NLU++ its count tracks the gold count better than the base
+   (+0.52 vs +0.22).
+4. **On SATA the count has no signal at all** (−0.08), while the base's own "how many" question (+0.67) and the sum
+   of its yes/no answers (+0.59) do: a real loss, not only calibration.
+5. **Given the information the baselines get, ours matches them.** B fits each track's dev labels (a count prior, Platt
+   scaling). Ours with its own ranking and the same dev count prior: exact 38.7 / 31.6 / 20.0 / 88.2 vs B 38.7 / 26.7
+   / 21.2 / 88.7; log-loss 2.25 / 3.96 / 4.54 / 0.48 vs 2.27 / 4.16 / 4.49 / 0.46 (ECtHR / NLU++ / SATA /
+   UNFAIR-ToS). Against the base's label-free predictors (`pick+count`, `noul_ctx+count`, `pick@top1`): better on
+   SATA (12.7 vs 6.1), equal on NLU++ (28.5 vs 29.0), worse on ECtHR (41.5 vs 47.5) and UNFAIR-ToS (6.7 vs 59.7).
+
+**Reading:** a count head trained on five task families learns their count distribution; on families with other
+count distributions (exam questions with 3–4 answers, contract clauses that are mostly fine) it does not transfer.
+What should transfer is the per-option evidence: how many options are actually supported. Next, in order: the
+pre-registered sigmoid ablation (does per-option evidence carry the count to new families better than a count head?),
+then one targeted rerun (E02b, pre-registered before it runs) on count-diverse data — many more empty and
+large answers, from more families — with whichever formulation wins.

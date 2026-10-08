@@ -33,6 +33,9 @@ Same items, options shuffled: share of answers unchanged, and mean Jaccard overl
 
 | track | predictor | items | unchanged | Jaccard |
 |---|---|---|---|---|
+| goemotions | ours@mode | 62 | 87.1 % | 0.884 |
+| nlupp | ours@mode | 67 | 83.6 % | 0.851 |
+| sata | ours@mode | 66 | 71.2 % | 0.812 |
 
 ## Cost and quality against the number of options (wide probe)
 

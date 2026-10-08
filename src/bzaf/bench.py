@@ -160,7 +160,7 @@ SUMMARY = (  # column label, predictors in order of preference
 )
 
 
-STABILITY_PREDICTORS = ("noul_ctx@0.5", "noul_ctx+platt", "pick@top1", "pick+count", "pick+dev_prior", "set@shipped")
+STABILITY_PREDICTORS = ("noul_ctx@0.5", "noul_ctx+platt", "pick@top1", "pick+count", "pick+dev_prior", "set@shipped", "ours@mode")
 
 
 def _first(rows: dict, names: tuple[str, ...]) -> str | None:
