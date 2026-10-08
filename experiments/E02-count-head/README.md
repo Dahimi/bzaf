@@ -177,3 +177,35 @@ What should transfer is the per-option evidence: how many options are actually s
 pre-registered sigmoid ablation (does per-option evidence carry the count to new families better than a count head?),
 then one targeted rerun (E02b, pre-registered before it runs) on count-diverse data — many more empty and
 large answers, from more families — with whichever formulation wins.
+
+### Ablation: one sigmoid per option (2026-10-08)
+
+Same data, seed and settings, `--set-loss sigmoid` (~35 min, about $2). Files: `sigmoid.md`, `ablation-*.md`
+(count head − sigmoid), `sigmoid-g2-*.md` (sigmoid − B, the same G2 comparisons), `sigmoid-diagnosis.md`.
+
+| track | exact-set: count head / sigmoid / B | set log-loss: count head / sigmoid / B | mean answer size: count head / sigmoid / gold |
+|---|---|---|---|
+| ECtHR | **41.5** / 19.4 / 38.7 | 2.48 / 2.40 / 2.27 | 1.08 / 0.21 / 1.09 |
+| NLU++ | 28.5 / **30.9** / 26.7 | 5.21 / 3.82 / 4.16 | 0.90 / 0.94 / 1.93 |
+| SATA | 12.7 / 9.3 / **21.2** | 7.76 / 6.78 / 4.49 | 1.93 / 2.10 / 3.60 |
+| UNFAIR-ToS | 6.7 / 85.3 / **88.7** | 3.22 / 0.79 / 0.46 | 1.07 / 0.21 / 0.13 |
+| GoEmotions (in-domain) | **51.6** / 37.5 / 24.8 | 2.08 / 2.29 / 3.17 | 1.01 / 0.56 / 1.18 |
+| synthetic (in-domain) | 88.3 / **99.5** / 43.9 | 0.52 / 0.03 / 2.17 | 2.75 / 2.80 / 2.79 |
+
+- **Count head − sigmoid, macro over H:** exact-set −13.9 [−16.3, −11.4], log-loss +1.22 [+1.15, +1.30]: the sigmoid
+  is better on the macro, but the per-track picture splits. It wins UNFAIR-ToS by 79 points and has lower log-loss on
+  NLU++, SATA and UNFAIR-ToS; the count head wins ECtHR (+22.1 [+13.4, +30.4]) and SATA (+3.3 [+1.6, +5.1]).
+- **The sigmoid also fails G2:** exact-set − B −7.6 [−10.0, −5.4]; log-loss +0.60 [+0.54, +0.66] (better than B
+  only on NLU++, −0.34 [−0.49, −0.20]); general track +0.16 [−1.18, +1.49] (passes).
+- **The two fail in opposite directions.** The count head always answers something (it learned the training count
+  distribution); the sigmoid at 0.5 answers "none" whenever no single option is confident, which is right for
+  UNFAIR-ToS (88 % none) and wrong when one answer's probability is split between similar options (ECtHR, GoEmotions:
+  the sum of its probabilities is close to the gold size, 0.88 vs 1.09 and 1.10 vs 1.18, but the 0.5 threshold keeps
+  too few).
+- **Neither reads the count on SATA** (rank correlation with the gold count +0.10 sigmoid, −0.08 count head; the
+  base's own per-option yes/no questions, summed: +0.59). With the true count, both pick the same options as the base
+  on every held-out track (within ~2 points).
+
+**Reading:** the formulation decides how the model fails on a new family, not whether it transfers. Both learned the
+trained families (in-domain gains up to +78 points) and neither learned to judge new families' options in absolute
+terms. The per-option evidence the base has (its yes/no answers carry the SATA count) is not reached by either.
