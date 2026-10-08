@@ -14,7 +14,7 @@ long inputs. v0 is the smallest benchmark that measures all of that, built from 
 
 | track | role | items | options (mean / max) | answers per item | what it tests | source, licence |
 |---|---|---|---|---|---|---|
-| `sata` | headline | 1,650 (all) | 9.4 / 16 | 2–11 | exam-style knowledge questions; comparable with the SATA-Bench paper | SATA-Bench @371dd0c, MIT |
+| `sata` | headline | 1,650 (all) | 9.4 / 16 | 2–11 | six multi-label sources (by inspecting items; corrected 2026-10-08, earlier described as exam-style): reading comprehension over story plots (342 items, MultiRC-style), toxicity categories (284, Jigsaw-style), Reuters news topics (249), MeSH root categories of PubMed abstracts (260), EUR-Lex concepts (311), business-news event types (204); comparable with the SATA-Bench paper | SATA-Bench @371dd0c, MIT |
 | `goemotions` | headline | 600 | 28 / 28 | 1–3 | emotions in Reddit comments; over-selection | GoEmotions test @e49bbfe, Apache-2.0 |
 | `unfair_tos` | headline | 800 | 8 / 8 | 0–2, 89 % none | unfair clauses in terms of service; "none" | LexGLUE UNFAIR-ToS test, CC BY 4.0 |
 | `nlupp` | headline | 600 | 45 / 48, with descriptions | 0–6 | intents in customer messages (banking, hotels) | NLU++ @57ec275, CC BY 4.0 |

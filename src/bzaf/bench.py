@@ -38,7 +38,8 @@ class Track:
 
 
 TRACKS = (
-    Track("sata", load_sata, {"lettered": True}, None, about="exam-style knowledge questions, 3-16 options, 2-11 answers (SATA-Bench, all 1,650)"),
+    Track("sata", load_sata, {"lettered": True}, None, about="six multi-label sources (story reading comprehension, toxicity, Reuters topics, "
+          "MeSH, EUR-Lex, business events), 3-16 options, 2-11 answers (SATA-Bench, all 1,650)"),
     Track("goemotions", load_goemotions, {"split": "test"}, 600, about="emotions in Reddit comments, 28 options, mostly 1 answer"),
     Track("unfair_tos", load_unfair_tos, {"split": "test"}, 800, about="unfair clause types in terms of service, 8 options, mostly none"),
     Track("nlupp", load_nlupp, {}, 600, about="intents in customer messages, 40-48 options with descriptions, 0-6 answers"),

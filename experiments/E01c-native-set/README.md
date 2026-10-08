@@ -43,7 +43,9 @@ predictor on the same items, for the model study; set log-loss of `set@shipped` 
 ## Caveats written down in advance
 
 - This tests the shipped model, not the sigmoid method: Vela's Set head was trained mostly on router and safety
-  labels, so SATA's exam-style questions may be out of its distribution. The method-level comparison (count head vs
+  labels, so SATA's questions may be out of its distribution (*corrected 2026-10-08:* SATA is not exam-style; its items
+  come from six multi-label sources: story reading comprehension, toxicity, Reuters topics, MeSH, EUR-Lex, business
+  events; see [benchmark.md](../../docs/benchmark.md)). The method-level comparison (count head vs
   sigmoid on the same backbone and data) remains E02/E03's main ablation.
 - Vela 2.0 4B keeps 74 % of Nox-4B's Decision Index score (31.63 vs 42.55, their blog), so it is not a candidate base
   for us; it is a baseline.

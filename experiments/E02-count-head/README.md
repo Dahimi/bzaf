@@ -172,7 +172,7 @@ Test splits; "ranking + true count" keeps as many top options as the gold set ha
    SATA (12.7 vs 6.1), equal on NLU++ (28.5 vs 29.0), worse on ECtHR (41.5 vs 47.5) and UNFAIR-ToS (6.7 vs 59.7).
 
 **Reading:** a count head trained on five task families learns their count distribution; on families with other
-count distributions (exam questions with 3–4 answers, contract clauses that are mostly fine) it does not transfer.
+count distributions (SATA's 3.6 answers on average, contract clauses that are mostly fine) it does not transfer.
 What should transfer is the per-option evidence: how many options are actually supported. Next, in order: the
 pre-registered sigmoid ablation (does per-option evidence carry the count to new families better than a count head?),
 then one targeted rerun (E02b, pre-registered before it runs) on count-diverse data — many more empty and
@@ -205,6 +205,20 @@ Same data, seed and settings, `--set-loss sigmoid` (~35 min, about $2). Files: `
 - **Neither reads the count on SATA** (rank correlation with the gold count +0.10 sigmoid, −0.08 count head; the
   base's own per-option yes/no questions, summed: +0.59). With the true count, both pick the same options as the base
   on every held-out track (within ~2 points).
+
+**SATA by source subset** (test split, exact-set %; corrected description of SATA, 2026-10-08):
+
+| subset | items | gold size | count head / sigmoid | ranking + true count: ours / base |
+|---|---|---|---|---|
+| reading comprehension (story plots) | 242 | 2.9 | 34.3 / 35.5 | 66.9 / 71.9 |
+| toxicity categories | 200 | 2.5 | 0.0 / 0.0 | 2.5 / 19.0 |
+| Reuters news topics | 164 | 2.3 | 22.6 / 4.9 | 70.7 / 58.5 |
+| MeSH root categories | 187 | 5.7 | 0.0 / 0.0 | 3.2 / 1.6 |
+| EUR-Lex concepts | 205 | 5.3 | 2.4 / 2.0 | 35.6 / 26.8 |
+| business-news events | 139 | 2.6 | 13.7 / 5.8 | 33.1 / 31.7 |
+
+SATA is six task families, not one; MeSH and toxicity are near zero for every model even with the true count, and
+the toxicity subset is the one place where training clearly hurt the ranking (2.5 vs 19.0).
 
 **Reading:** the formulation decides how the model fails on a new family, not whether it transfers. Both learned the
 trained families (in-domain gains up to +78 points) and neither learned to judge new families' options in absolute
