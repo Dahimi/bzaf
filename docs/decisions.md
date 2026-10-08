@@ -140,3 +140,13 @@ For our own no-regression gates (G2–G4, the D18 trainability check) benchmark 
 single-answer test sets, 300 items each, asked in each model's own question types (see
 [benchmark.md](benchmark.md)). At release we submit to the board for the comparable number.
 *Changes the E01b pre-registration before any run: the Decision Index sample is replaced by the board numbers.*
+
+## D20 — Base family: Decision 2.0, subject to the trainability check (2026-10-08)
+E01b: Nox-4B beats Kev-4B on general quality (board +5.5; our general track +2.66 [+0.49, +4.78]) and on multi-answer
+ranking (+2.56 [+1.14, +4.00] macro over benchmark v0's headline tracks), so D18 steps 1 and 2 hold. Decision 2.0
+becomes the working family: the trainer's first adapter is Decision 2.0, E02 moves from Kev-0.8B to Eos-0.8B (same
+family as Nox, so the adapter and recipe are built once), and the trainability check (D18 step 3) runs on Nox-4B
+after E02. If it fails, we fall back to Kev, whose adapter is the second one to write.
+*Lineage:* the Decision 2.0 cards state Apache-2.0 but not the training data or teacher models. Accepted as a known
+risk for development (published by the vLLM Semantic Router project, Apache-2.0 weights); before release we ask the
+authors to confirm that no Jev outputs or restricted-teacher outputs were used (D4), and state the answer in our card.
