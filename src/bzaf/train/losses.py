@@ -2,6 +2,8 @@
 
 set_nll   −log P(gold set) = −[log P(|S| = s) + Σ_{i∈S} z_i − log e_s(exp z)], exact (elementary symmetric
           polynomials by a log-space dynamic programme over the options). Splits into a count part and a selection part.
+sigmoid_nll the E02 ablation: one independent sigmoid per option, −log P(gold set) = Σ_i BCE(z_i, [i ∈ S]) (no count
+          head; the count is whatever the per-option probabilities imply).
 choice_ce single-answer rows: cross-entropy of the gold option (the count = 1 case of the same likelihood).
 distill   KL(base ‖ model) over the options: keeps the model's answers on general questions close to the base's.
 """
@@ -32,6 +34,13 @@ def set_nll(scores: torch.Tensor, count_logits: torch.Tensor, gold: torch.Tensor
     e = log_esp(z, mask, int(n.max().item()) if n.numel() else 0)
     select_nll = -((z * gold).sum(-1) - e.gather(1, n[:, None]).squeeze(1))
     return {"nll": count_nll + select_nll, "count_nll": count_nll, "select_nll": select_nll}
+
+
+def sigmoid_nll(scores: torch.Tensor, gold: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    """Per-row −log P(gold set) under independent Bernoulli(sigmoid(z_i)) options."""
+    z = scores.float().masked_fill(~mask, 0.0)
+    bce = F.binary_cross_entropy_with_logits(z, gold.float(), reduction="none")
+    return (bce * mask).sum(-1)
 
 
 def choice_ce(scores: torch.Tensor, gold_index: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:

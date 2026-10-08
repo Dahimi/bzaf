@@ -129,3 +129,53 @@ def test_interrupted_run_resumes_to_the_same_weights(tmp_path):
     assert all(torch.allclose(a[n], b[n], atol=1e-6) for n in a)
     again = train(cfg("cut", resume=True), device="cpu", rows=rows, log=lambda *_: None)
     assert again["resumed_from"] == 6
+
+
+def test_sigmoid_ablation_trains_and_reads_out_as_independent_options(tmp_path):
+    """--set-loss sigmoid: no count head, a learned shared bias; the readout's count is the Poisson-binomial the option
+    probabilities imply, so ours@mode is exactly the set of options above 0.5 and its log-loss is the independent one."""
+    import numpy as np
+    from vllm_srun.testing.fixtures import write_package
+
+    from bzaf.data import load_synthetic
+    from bzaf.predictors import OursSet
+    from bzaf.schema import write_items
+    from bzaf.setdist import SetDistribution
+    from bzaf.train.data import TrainRow, multi_question, shuffled
+    from bzaf.train.trainer import TrainConfig, train
+
+    pkg = write_package(tmp_path / "pkg", backbone="qwen3_5", seed=1)
+    bench_dir = tmp_path / "bench"
+    write_items(load_synthetic(n=8, seed=0), bench_dir / "synthetic.jsonl")
+    rng = random.Random(0)
+    rows = [TrainRow(it.id, "synthetic", "set", it.state, multi_question(it), it.gold)
+            for it in (shuffled(x, rng) for x in load_synthetic(n=16, seed=5))]
+    cfg = TrainConfig(base=str(pkg), out=str(tmp_path / "run"), bench=str(bench_dir), max_steps=4, warmup_steps=1,
+                      max_tokens=4096, log_every=1, set_loss="sigmoid", lr_count=1e-2)
+    train(cfg, device="cpu", rows=rows, log=lambda *_: None)
+    ck = torch.load(tmp_path / "run" / "checkpoint.pt")["trainable"]
+    assert "set_bias" in ck and not any(n.startswith("count_head") for n in ck)
+    assert "set_bias" in torch.load(tmp_path / "run" / "heads.pt")
+
+    recs = [json.loads(line) for line in (tmp_path / "run" / "eval" / "ours" / "synthetic.jsonl").read_text().splitlines()]
+    for rec in recs:
+        z = np.asarray(rec["multi_z"])
+        assert len(rec["multi_count"]) == rec["k"] + 1 and abs(sum(rec["multi_count"]) - 1) < 1e-9
+        pred = OursSet().predict(rec)
+        assert pred.subset == {i for i in range(rec["k"]) if z[i] > 0}
+        gold = rec["gold"]
+        assert pred.dist.log_prob(gold) == pytest.approx(SetDistribution(z).log_prob(gold), abs=1e-6)
+
+
+def test_sigmoid_nll_is_the_independent_set_likelihood():
+    import numpy as np
+
+    from bzaf.setdist import SetDistribution
+    from bzaf.train.losses import sigmoid_nll
+
+    z = torch.tensor([[1.5, -0.3, 0.2, 0.0], [0.4, -2.0, 0.0, 0.0]])
+    mask = torch.tensor([[True, True, True, True], [True, True, False, False]])
+    gold = torch.tensor([[True, False, True, False], [False, False, False, False]])
+    nll = sigmoid_nll(z, gold, mask)
+    assert nll[0].item() == pytest.approx(-SetDistribution(np.array([1.5, -0.3, 0.2, 0.0])).log_prob([0, 2]), abs=1e-5)
+    assert nll[1].item() == pytest.approx(-SetDistribution(np.array([0.4, -2.0])).log_prob([]), abs=1e-5)

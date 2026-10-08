@@ -8,6 +8,7 @@ are uploaded; weights are cached on the bzaf-model-cache volume, runs are writte
     modal run cloud/train_modal.py --name e02-smoke --args "--scale 0.02 --max-steps 20 --eval-limit 20 --eval-base"
     modal run --detach cloud/train_modal.py --name e02 --args "--eval-base"   # --detach: survives a closed terminal
     modal run --detach cloud/train_modal.py --name e02 --args "--eval-base --resume"   # after an interruption
+    modal run --detach cloud/train_modal.py --name e02-sigmoid --args "--set-loss sigmoid"   # E02 ablation
 
     # 3. fetch the evaluation records and score them like any readout
     modal volume get bzaf-runs e02/eval runs/e02/

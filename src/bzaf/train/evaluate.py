@@ -5,11 +5,13 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+import numpy as np
 import torch
 
 from ..bench import readout_plan
 from ..readout import build_questions, parse_answers
 from ..schema import Item, read_items
+from ..setdist import log_esp
 from .decision2 import Decision2Model, Package, Row, Tokenizer, answer, collate, render_question
 
 
@@ -47,7 +49,13 @@ def answer_items(model: Decision2Model, pkg: Package, tok: Tokenizer, items: lis
         for j, i in enumerate(idx):
             row, (n, key) = rows[i], owners[i]
             z = scores[j, : len(row.keys)].float()
-            if row.kind == "multi":
+            if row.kind == "multi" and getattr(model, "set_bias", None) is not None and not base:
+                # sigmoid ablation: independent options; the count distribution they imply (Poisson-binomial) keeps the
+                # record format, and with it ours@mode is exactly the 0.5-threshold set
+                zn = (z + model.set_bias.float()).double().cpu().numpy()
+                count = np.exp(log_esp(zn) - np.logaddexp(0.0, zn).sum())
+                answers[n][key] = {"type": "multi", "logits": zn.tolist(), "count": count.tolist()}
+            elif row.kind == "multi":
                 answers[n][key] = {"type": "multi", "logits": z.tolist(), "count": torch.softmax(counts[j].float(), -1).tolist()}
             else:
                 answers[n][key] = answer(pkg, row, z.tolist())

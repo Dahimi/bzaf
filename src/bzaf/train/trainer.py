@@ -19,7 +19,7 @@ import torch
 
 from .data import E02_SIZES, TrainRow, build_e02
 from .decision2 import Decision2Model, Package, Row, render_question
-from .losses import distill, set_nll
+from .losses import distill, set_nll, sigmoid_nll
 
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "in_proj_qkv", "in_proj_z", "in_proj_a", "in_proj_b", "out_proj",
                 "gate_proj", "up_proj", "down_proj"]
@@ -37,7 +37,8 @@ class TrainConfig:
     lora_alpha: int = 32
     lr_lora: float = 2e-4
     lr_head: float = 5e-5          # the released candidate head, continued
-    lr_count: float = 1e-3         # the new count head
+    lr_count: float = 1e-3         # the new count head (or, with set_loss=sigmoid, the new per-option bias)
+    set_loss: str = "count"        # count: count head + exact set NLL; sigmoid: the ablation, one sigmoid per option
     weight_decay: float = 0.0
     epochs: float = 1.0
     max_steps: int | None = None
@@ -104,10 +105,36 @@ def build_model(cfg: TrainConfig, device: str):
     model.keep_base()
     model.backbone = get_peft_model(model.backbone, LoraConfig(r=cfg.lora_r, lora_alpha=cfg.lora_alpha, lora_dropout=0.0,
                                                               target_modules=LORA_TARGETS))
+    if cfg.set_loss == "sigmoid":  # the ablation: no count head; z_i + b is each option's own log-odds
+        model.count_head.requires_grad_(False)
+        model.set_bias = torch.nn.Parameter(torch.zeros((), device=device))
+    elif cfg.set_loss != "count":
+        raise ValueError(f"set_loss must be count or sigmoid, not {cfg.set_loss!r}")
     if cfg.grad_checkpointing:
         model.backbone.enable_input_require_grads()
         model.backbone.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     return model.to(device), pkg, tok
+
+
+@torch.no_grad()
+def init_set_bias(model, examples: list[Example], tok, device: str, log=print, n: int = 64) -> None:
+    """Sigmoid ablation: start the shared bias so that an average option's probability is the training base rate
+    (the released head's logits are softmax logits, whose level is arbitrary)."""
+    from .decision2 import collate
+
+    sets = [e for e in examples if e.loss == "set"]
+    rate = sum(len(e.gold) for e in sets) / max(1, sum(len(e.row.keys) for e in sets))
+    sample = sorted(sets[:n], key=lambda e: len(e.row.ids))
+    total, count = 0.0, 0
+    for i in range(0, len(sample), 8):
+        batch = {k: v.to(device) for k, v in collate([e.row for e in sample[i : i + 8]], tok.pad_id).items()}
+        with torch.autocast(device_type=torch.device(device).type, dtype=torch.bfloat16, enabled=device != "cpu"):
+            scores, _ = model(batch)
+        mask = batch["candidate_mask"]
+        total += float(scores.float().masked_fill(~mask, 0).sum())
+        count += int(mask.sum())
+    model.set_bias.fill_(math.log(rate / (1 - rate)) - total / max(1, count))
+    log(f"sigmoid ablation: base rate {rate:.3f}, initial bias {model.set_bias.item():.2f}")
 
 
 def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | None = None, log=print,
@@ -135,7 +162,8 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
     groups = [
         {"params": [p for n, p in model.backbone.named_parameters() if p.requires_grad], "lr": cfg.lr_lora},
         {"params": list(model.head.parameters()), "lr": cfg.lr_head},
-        {"params": list(model.count_head.parameters()), "lr": cfg.lr_count},
+        {"params": [model.set_bias] if cfg.set_loss == "sigmoid" else list(model.count_head.parameters()),
+         "lr": cfg.lr_count},
     ]
     opt = torch.optim.AdamW(groups, weight_decay=cfg.weight_decay)
     batches_per_epoch = len(make_batches(examples, cfg.max_tokens, random.Random(0)))
@@ -147,6 +175,8 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
             return (step + 1) / cfg.warmup_steps
         return 0.5 * (1 + math.cos(math.pi * min(1.0, (step - cfg.warmup_steps) / max(1, total - cfg.warmup_steps))))
 
+    if cfg.set_loss == "sigmoid":
+        init_set_bias(model, examples, tok, device, log)
     ckpt_path = out / "checkpoint.pt"
     trainable = {n: p for n, p in model.named_parameters() if p.requires_grad}
     skip, done = 0, False
@@ -199,10 +229,14 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
                     gold = torch.zeros_like(batch["candidate_mask"])
                     for j, e in enumerate(exs):
                         gold[j, e.gold] = True
-                    parts = set_nll(scores, counts, gold, batch["candidate_mask"])
-                    loss = parts["nll"].mean()
-                    stats = {"set_nll": loss.item(), "count_nll": parts["count_nll"].mean().item(),
-                             "select_nll": parts["select_nll"].mean().item()}
+                    if cfg.set_loss == "sigmoid":
+                        loss = sigmoid_nll(scores + model.set_bias, gold, batch["candidate_mask"]).mean()
+                        stats = {"set_nll": loss.item()}
+                    else:
+                        parts = set_nll(scores, counts, gold, batch["candidate_mask"])
+                        loss = parts["nll"].mean()
+                        stats = {"set_nll": loss.item(), "count_nll": parts["count_nll"].mean().item(),
+                                 "select_nll": parts["select_nll"].mean().item()}
                 else:
                     with torch.no_grad():
                         base_scores, _ = model.base_forward(batch)
@@ -234,7 +268,10 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
         save_checkpoint(total, finished=True)
 
     model.backbone.save_pretrained(out / "adapter")
-    torch.save({"head": model.head.state_dict(), "count_head": model.count_head.state_dict()}, out / "heads.pt")
+    heads = {"head": model.head.state_dict(), "count_head": model.count_head.state_dict()}
+    if cfg.set_loss == "sigmoid":
+        heads["set_bias"] = model.set_bias.detach().cpu()
+    torch.save(heads, out / "heads.pt")
     model.eval()
     log("evaluating the trained model")
     evaluate.run(model, pkg, tok, cfg.bench, out / "eval" / "ours", "ours", device, tracks=cfg.eval_tracks,

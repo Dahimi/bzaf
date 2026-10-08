@@ -80,9 +80,17 @@ untrained references, `noul_ctx+platt` and `pick+dev_prior` (choosing on test fa
 Reported, no decision attached: in-domain tracks, count accuracy, order stability, calibration and selective
 automation of `ours@mode`, the training-loss split (count vs selection).
 
-**Ablation (second run, same data and budget; to implement before it runs):** count head off, one sigmoid per option
-with binary cross-entropy (direction 2), decoded at 0.5. Read-out, not a gate: if it matches the count head within
-CIs on exact-set and log-loss, report it and prefer the simpler model.
+**Ablation (second run, same data and budget):** count head off, one sigmoid per option with binary cross-entropy
+(direction 2), decoded at 0.5. Read-out, not a gate: if it matches the count head within CIs on exact-set and log-loss
+(`ours@mode`, macro over H), report it and prefer the simpler model.
+*Implemented 2026-10-08, after the main run's training finished and before any of its evaluation was looked at:*
+`--set-loss sigmoid` ([trainer.py](../../src/bzaf/train/trainer.py)). Each option's log-odds is the candidate head's
+logit plus one learned shared bias (in place of the count head, same learning rate 1e-3), because the released head's
+logits are softmax logits whose level is arbitrary; the bias starts so that an average option's probability is the
+training base rate. Loss Σ_i BCE = −log P(gold set) under independent options. The readout records the count
+distribution those probabilities imply (Poisson-binomial), so `ours@mode` is exactly the 0.5-threshold set and its
+set log-loss is the independent model's. Same data, seed, batches, LoRA and head settings; the base evaluation of the
+main run is reused.
 
 ## Commands
 
@@ -100,8 +108,19 @@ uv run bzaf bench compare runs/e02/eval/ours runs/e02/eval/base --predictor ours
   --predictor-b noul_ctx+platt,pick+dev_prior --only $H --metric per_item_nll > experiments/E02-count-head/results/g2-logloss.md
 uv run bzaf bench compare runs/e02/eval/ours runs/e02/eval/base --predictor native@top1 > experiments/E02-count-head/results/g2-general.md
 cp runs/e02/train_log.jsonl runs/e02/config.json experiments/E02-count-head/results/
+
+# ablation: count head off, one sigmoid per option
+uv run modal run --detach cloud/train_modal.py --name e02-sigmoid --args "--set-loss sigmoid"
+modal volume get bzaf-runs e02-sigmoid runs/
+R=experiments/E02-count-head/results
+uv run bzaf bench score runs/e02-sigmoid/eval/ours --out $R/sigmoid
+uv run bzaf bench compare runs/e02/eval/ours runs/e02-sigmoid/eval/ours --predictor ours@mode --only $H > $R/ablation-exact.md
+uv run bzaf bench compare runs/e02/eval/ours runs/e02-sigmoid/eval/ours --predictor ours@mode --only $H \
+  --metric per_item_nll > $R/ablation-logloss.md
+cp runs/e02-sigmoid/train_log.jsonl $R/sigmoid-train_log.jsonl
 ```
 
 ## Results
 
-*Not run yet.*
+*Main run done 2026-10-08 (651 steps, 24,913 rows: 13,999 set, 10,914 distill; ~10M tokens; 30 min training at
+~5.7k tokens/s and 33 min evaluating ours + base on one L40S, about $3). Scores pending.*
