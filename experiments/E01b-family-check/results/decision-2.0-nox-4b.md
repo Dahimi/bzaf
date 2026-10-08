@@ -7,7 +7,7 @@ Summary: exact-set % / example F1 on each track's test split (dev split used onl
 | ecthr | 217 | 35.9 / 0.472 | 50.7 / 0.570 | — | 77.4 / 0.815 |
 | goemotions | 403 | 17.1 / 0.217 | 35.5 / 0.420 | — | 39.2 / 0.440 |
 | nlupp | 424 | 35.8 / 0.695 | 35.4 / 0.660 | — | 62.3 / 0.824 |
-| sata | 1137 | 29.8 / 0.767 | 29.6 / 0.676 | — | 54.4 / 0.816 |
+| sata | 1137 | 30.0 / 0.770 | 29.6 / 0.678 | — | 54.4 / 0.818 |
 | synthetic | 205 | 94.6 / 0.982 | 70.2 / 0.840 | — | 95.6 / 0.985 |
 | unfair_tos | 566 | 92.4 / 0.926 | 88.2 / 0.882 | — | 99.1 / 0.993 |
 | wide (probe) | 215 | 99.1 / 0.999 | 53.5 / 0.587 | — | 97.7 / 0.991 |
@@ -29,7 +29,7 @@ Accuracy with its 95 % CI; chance-corrected accuracy = (accuracy − chance) / (
 
 ## Option-order stability
 
-Same items, options shuffled: share of answers unchanged, and mean Jaccard overlap of the two answers.
+Same items, options shuffled: share of answers unchanged, and mean Jaccard overlap of the two answers. **Order-track items that failed (re-run the readout to retry): nlupp 99.**
 
 | track | predictor | items | unchanged | Jaccard |
 |---|---|---|---|---|
@@ -44,7 +44,7 @@ Same items, options shuffled: share of answers unchanged, and mean Jaccard overl
 | nlupp | pick+count | 1 | 100.0 % | 1.000 |
 | nlupp | pick+dev_prior | 1 | 0.0 % | 0.000 |
 | sata | noul_ctx@0.5 | 66 | 72.7 % | 0.898 |
-| sata | noul_ctx+platt | 66 | 77.3 % | 0.923 |
+| sata | noul_ctx+platt | 66 | 78.8 % | 0.927 |
 | sata | pick@top1 | 66 | 84.8 % | 0.848 |
 | sata | pick+count | 66 | 75.8 % | 0.881 |
 | sata | pick+dev_prior | 66 | 80.3 % | 0.875 |
@@ -248,56 +248,54 @@ Set probabilities (predictors that give one): calibration error of the predicted
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | +25.94 pts [+20.99, +30.66] |
 | S3 count dial on yes/no (ctx), log-loss | noul_ctx+count − noul_ctx@0.5 | -7.99 nats [-8.34, -7.67] |
 
-## sata (dev 513, test 1137, failed 4)
-
-> **4 items failed (0 %)** and count as wrong. First error: `HTTP 500: b'{"error":{"code":"internal_error","message":"OutOfMemoryError: CUDA out of memory. Tried to allocate 876.00 MiB. GPU 0 has a total capacity of 44.42 GiB of which 24.12 MiB is free. Process 1 has 44.39 GiB memory in use. Of the allocated memory 38.39 GiB is allocated by PyTorch, with 1.80`. Re-run the readout to retry them.
+## sata (dev 513, test 1137, failed 0)
 
 | predictor | exact-set % [95% CI] | example F1 | Jaccard | micro F1 | count acc | count error | mean size (gold) | set log-loss |
 |---|---|---|---|---|---|---|---|---|
-| noul_ctx@0.5 | 27.5 [25.1, 30.1] | 0.732 | 0.636 | 0.747 | 0.342 | 1.28 | 2.98 (3.60) | 3.658 |
-| noul_ctx+platt | 29.8 [27.0, 32.4] | 0.767 | 0.672 | 0.775 | 0.369 | 1.15 | 3.54 (3.60) | 3.550 |
+| noul_ctx@0.5 | 27.6 [25.1, 30.2] | 0.735 | 0.638 | 0.749 | 0.343 | 1.27 | 2.98 (3.60) | 3.657 |
+| noul_ctx+platt | 30.0 [27.2, 32.6] | 0.770 | 0.675 | 0.777 | 0.370 | 1.14 | 3.55 (3.60) | 3.549 |
 | always_none | 0.0 [0.0, 0.0] | 0.000 | 0.000 | 0.000 | 0.000 | 3.60 | 0.00 (3.60) | — |
-| pick@top1 | 0.0 [0.0, 0.0] | 0.454 | 0.314 | 0.403 | 0.000 | 2.61 | 1.00 (3.60) | — |
-| pick+true_count | 54.4 [51.5, 57.1] | 0.816 | 0.750 | 0.828 | 0.997 | 0.01 | 3.60 (3.60) | — |
-| noul_ctx+true_count | 53.8 [50.9, 56.6] | 0.823 | 0.754 | 0.831 | 0.997 | 0.01 | 3.60 (3.60) | — |
-| pick+count | 29.8 [27.2, 32.5] | 0.629 | 0.561 | 0.697 | 0.330 | 1.70 | 2.49 (3.60) | 3.647 |
-| noul_ctx+count | 25.8 [23.1, 28.4] | 0.569 | 0.506 | 0.650 | 0.287 | 1.95 | 2.26 (3.60) | 3.816 |
-| pick+dev_prior | 29.6 [26.9, 32.3] | 0.676 | 0.572 | 0.636 | 0.423 | 1.57 | 2.11 (3.60) | 3.574 |
-| noul_ctx+dev_prior | 26.8 [24.4, 29.5] | 0.675 | 0.566 | 0.631 | 0.385 | 1.67 | 2.19 (3.60) | 3.742 |
+| pick@top1 | 0.0 [0.0, 0.0] | 0.455 | 0.315 | 0.404 | 0.000 | 2.60 | 1.00 (3.60) | — |
+| pick+true_count | 54.4 [51.4, 57.2] | 0.818 | 0.752 | 0.829 | 1.000 | 0.00 | 3.60 (3.60) | — |
+| noul_ctx+true_count | 53.9 [51.0, 56.8] | 0.825 | 0.756 | 0.832 | 1.000 | 0.00 | 3.60 (3.60) | — |
+| pick+count | 29.8 [27.2, 32.5] | 0.631 | 0.563 | 0.698 | 0.330 | 1.69 | 2.50 (3.60) | 3.650 |
+| noul_ctx+count | 25.9 [23.3, 28.4] | 0.571 | 0.508 | 0.651 | 0.288 | 1.94 | 2.27 (3.60) | 3.815 |
+| pick+dev_prior | 29.6 [26.8, 32.3] | 0.678 | 0.574 | 0.637 | 0.423 | 1.56 | 2.11 (3.60) | 3.577 |
+| noul_ctx+dev_prior | 26.8 [24.4, 29.4] | 0.677 | 0.567 | 0.632 | 0.385 | 1.66 | 2.19 (3.60) | 3.741 |
 
 Set probabilities (predictors that give one): calibration error of the predicted set's probability (0 = honest), and selective automation: share of items answerable at 90 % / 95 % exact-set accuracy, area under the risk-coverage curve (lower is better).
 
 | predictor | set log-loss | calibration error | answerable @90 % | answerable @95 % | risk-coverage area |
 |---|---|---|---|---|---|
-| noul_ctx@0.5 | 3.658 | 0.109 | 0.0 % | 0.0 % | 0.543 |
-| noul_ctx+platt | 3.550 | 0.056 | 0.0 % | 0.0 % | 0.518 |
-| pick+count | 3.647 | 0.071 | 0.0 % | 0.0 % | 0.536 |
-| noul_ctx+count | 3.816 | 0.072 | 0.0 % | 0.0 % | 0.606 |
-| pick+dev_prior | 3.574 | 0.149 | 17.7 % | 7.5 % | 0.410 |
-| noul_ctx+dev_prior | 3.742 | 0.134 | 2.2 % | 2.1 % | 0.488 |
+| noul_ctx@0.5 | 3.657 | 0.110 | 0.0 % | 0.0 % | 0.543 |
+| noul_ctx+platt | 3.549 | 0.057 | 0.0 % | 0.0 % | 0.517 |
+| pick+count | 3.650 | 0.071 | 0.0 % | 0.0 % | 0.536 |
+| noul_ctx+count | 3.815 | 0.073 | 0.0 % | 0.0 % | 0.606 |
+| pick+dev_prior | 3.577 | 0.149 | 17.7 % | 7.5 % | 0.411 |
+| noul_ctx+dev_prior | 3.741 | 0.133 | 2.2 % | 2.1 % | 0.488 |
 
 SATA-Bench's own metrics (its definitions: EM leaves out empty answers; RStd = spread of recall across option positions).
 
 | predictor | EM % | JI % | CtDif | CtDifAbs | RStd | empty answers |
 |---|---|---|---|---|---|---|
-| noul_ctx@0.5 | 28.5 | 63.6 | -0.63 | 1.28 | 8.0 | 38 |
-| noul_ctx+platt | 30.5 | 67.2 | -0.07 | 1.15 | 6.9 | 25 |
+| noul_ctx@0.5 | 28.5 | 63.8 | -0.62 | 1.27 | 7.8 | 35 |
+| noul_ctx+platt | 30.6 | 67.5 | -0.05 | 1.14 | 6.6 | 22 |
 | always_none | 0.0 | 0.0 | -3.60 | 3.60 | 0.0 | 1137 |
-| pick@top1 | 0.0 | 31.4 | -2.61 | 2.61 | 7.6 | 3 |
-| pick+true_count | 54.5 | 75.0 | -0.01 | 0.01 | 5.0 | 3 |
-| noul_ctx+true_count | 54.0 | 75.4 | -0.01 | 0.01 | 4.5 | 3 |
-| pick+count | 37.9 | 56.1 | -1.12 | 1.70 | 6.5 | 242 |
-| noul_ctx+count | 36.1 | 50.6 | -1.35 | 1.95 | 8.3 | 326 |
-| pick+dev_prior | 29.6 | 57.2 | -1.50 | 1.57 | 11.1 | 3 |
-| noul_ctx+dev_prior | 26.9 | 56.6 | -1.42 | 1.67 | 14.1 | 3 |
+| pick@top1 | 0.0 | 31.5 | -2.60 | 2.60 | 7.6 | 0 |
+| pick+true_count | 54.4 | 75.2 | +0.00 | 0.00 | 5.0 | 0 |
+| noul_ctx+true_count | 53.9 | 75.6 | +0.00 | 0.00 | 4.6 | 0 |
+| pick+count | 37.8 | 56.3 | -1.11 | 1.69 | 6.5 | 239 |
+| noul_ctx+count | 36.1 | 50.8 | -1.33 | 1.94 | 8.3 | 323 |
+| pick+dev_prior | 29.6 | 57.4 | -1.49 | 1.56 | 11.0 | 0 |
+| noul_ctx+dev_prior | 26.8 | 56.7 | -1.41 | 1.66 | 14.0 | 0 |
 
 | signal | a − b | mean [95% CI] |
 |---|---|---|
-| G1 ranking+true count vs best yes/no | pick+true_count − noul_ctx+platt | +24.54 pts [+22.08, +27.18] |
-| R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +0.53 pts [-1.32, +2.29] |
-| C1 value of the right count over top-1 | pick+true_count − pick@top1 | +54.35 pts [+51.45, +57.08] |
-| S2 asked count vs true count (headroom) | pick+count − pick+true_count | -24.54 pts [-27.09, -22.08] |
-| S5 dataset count prior vs true count (item-level counting headroom) | pick+dev_prior − pick+true_count | -24.80 pts [-27.26, -22.43] |
+| G1 ranking+true count vs best yes/no | pick+true_count − noul_ctx+platt | +24.36 pts [+21.90, +27.00] |
+| R1 Choice ranking vs yes/no ranking (both told the count) | pick+true_count − noul_ctx+true_count | +0.44 pts [-1.41, +2.20] |
+| C1 value of the right count over top-1 | pick+true_count − pick@top1 | +54.35 pts [+51.45, +57.17] |
+| S2 asked count vs true count (headroom) | pick+count − pick+true_count | -24.54 pts [-27.00, -21.99] |
+| S5 dataset count prior vs true count (item-level counting headroom) | pick+dev_prior − pick+true_count | -24.80 pts [-27.44, -22.34] |
 | S3 count dial on yes/no (ctx) | noul_ctx+count − noul_ctx@0.5 | -1.76 pts [-4.05, +0.53] |
 | S3 count dial on yes/no (ctx), log-loss | noul_ctx+count − noul_ctx@0.5 | +0.16 nats [+0.11, +0.20] |
 
