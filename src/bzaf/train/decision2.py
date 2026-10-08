@@ -278,26 +278,34 @@ def answer(pkg: Package, row: Row, logits: list[float]) -> dict:
     return {"type": "choice", "choice": row.keys[int(max(range(len(p)), key=p.__getitem__))], "probabilities": probs}
 
 
+def compare_to_reference(pkg: Package, state: Any, questions: dict, expected: dict, device: str = "cpu",
+                         autocast: bool = False) -> dict:
+    """Our adapter's answers to `questions` about `state` against reference answers keyed by question id."""
+    tok = pkg.tokenizer()
+    model = Decision2Model.from_package(pkg, device=device).eval()
+    qids = list(questions)
+    rows = [render_question(tok, state, questions[q], pkg.max_input_tokens) for q in qids]
+    batch = {k: v.to(device) for k, v in collate(rows, tok.pad_id).items()}
+    with torch.no_grad(), torch.autocast(device_type=torch.device(device).type, dtype=torch.bfloat16, enabled=autocast):
+        scores, _ = model(batch)
+    worst, report = 0.0, {}
+    for qid, row, z in zip(qids, rows, scores):  # matched by question id: reference files may be in another order
+        ours = answer(pkg, row, z[: len(row.keys)].float().tolist())
+        exp_p = expected[qid].get("probabilities") or {"true": expected[qid]["noul"]}
+        our_p = ours.get("probabilities") or {"true": ours["noul"]}
+        diff = max(abs(exp_p[k] - our_p[k]) for k in exp_p)
+        report[qid] = {"expected": exp_p, "ours": our_p, "max_abs_diff": diff}
+        worst = max(worst, diff)
+    return {"device": device, "autocast": autocast, "max_abs_diff": worst, "questions": report}
+
+
 def golden_check(repo_id: str, device: str = "cpu", autocast: bool = False, cache_dir: str | None = None) -> dict:
     """Our adapter on the runtime's readiness request against its recorded FP32 answers for this model (the
     `decision2_golden.py` copy of the runtime registry). Returns the largest probability difference; expect ~1e-5
     in FP32 and ~1e-2 under bf16 autocast."""
     from .decision2_golden import GOLDEN as golden
+
     ref = golden["models"][repo_id]
     pkg = Package.open(repo_id, revision=ref["revision"], cache_dir=cache_dir)
-    tok = pkg.tokenizer()
-    model = Decision2Model.from_package(pkg, device=device).eval()
-    rows = [render_question(tok, golden["state"], q, pkg.max_input_tokens) for q in golden["questions"].values()]
-    batch = {k: v.to(device) for k, v in collate(rows, tok.pad_id).items()}
-    with torch.no_grad(), torch.autocast(device_type=torch.device(device).type, dtype=torch.bfloat16, enabled=autocast):
-        scores, _ = model(batch)
-    worst, report = 0.0, {}
-    for (qid, expected), row, z in zip(ref["cpu"].items(), rows, scores):
-        ours = answer(pkg, row, z[: len(row.keys)].float().tolist())
-        exp_p = expected.get("probabilities") or {"true": expected["noul"]}
-        our_p = ours.get("probabilities") or {"true": ours["noul"]}
-        diff = max(abs(exp_p[k] - our_p[k]) for k in exp_p)
-        report[qid] = {"expected": exp_p, "ours": our_p, "max_abs_diff": diff}
-        worst = max(worst, diff)
-    return {"model": repo_id, "revision": ref["revision"], "device": device, "autocast": autocast,
-            "max_abs_diff": worst, "questions": report}
+    result = compare_to_reference(pkg, golden["state"], golden["questions"], ref["cpu"], device, autocast)
+    return {"model": repo_id, "revision": ref["revision"], **result}

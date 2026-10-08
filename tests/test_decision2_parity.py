@@ -56,3 +56,25 @@ def test_adapter_reproduces_runtime_answers(package):
     # the new count head starts uniform over the counts each row allows
     p = torch.softmax(counts[0], -1)
     assert torch.allclose(p[:5], torch.full((5,), 0.2)) and p[5:].sum() == 0
+
+
+def test_reference_comparison_matches_by_question_id(package):
+    """compare_to_reference (used by the real-weight golden check) pairs answers by question id, whatever the order of
+    the reference file (the runtime registry stores them alphabetically)."""
+    import asyncio
+
+    from vllm_srun.config import ModelConfig, ServeConfig
+    from vllm_srun.runtime import Runtime
+
+    from bzaf.train.decision2 import Package, compare_to_reference
+
+    runtime = Runtime(ServeConfig(models=(ModelConfig(model=str(package), device="cpu"),)))
+    runtime.start(background=False)
+    try:
+        _, body = asyncio.run(runtime.call("decisions", {"state": STATE, "questions": QUESTIONS}))
+    finally:
+        runtime.stop()
+    expected = dict(sorted(body["answers"].items()))           # alphabetical, unlike QUESTIONS
+    assert list(expected) != list(QUESTIONS)
+    result = compare_to_reference(Package.open(str(package)), STATE, QUESTIONS, expected)
+    assert result["max_abs_diff"] < 1e-6
