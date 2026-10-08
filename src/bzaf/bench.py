@@ -265,8 +265,11 @@ def format_bench(res: dict) -> str:
                          f"{100*cc:.1f} | {m['set_nll']:.3f} | {m['ece']:.3f} |")
         lines.append(f"| **mean** | | | | **{100*float(np.mean(corrected)):.1f}** | | |")
     if res["stability"]:
+        failed = {ds: r["n_failed"] for ds, r in res["order"].items() if r.get("n_failed")}
+        note = (f" **Order-track items that failed (re-run the readout to retry): "
+                f"{', '.join(f'{ds} {n}' for ds, n in failed.items())}.**" if failed else "")
         lines += ["", "## Option-order stability", "",
-                  "Same items, options shuffled: share of answers unchanged, and mean Jaccard overlap of the two answers.", "",
+                  "Same items, options shuffled: share of answers unchanged, and mean Jaccard overlap of the two answers." + note, "",
                   "| track | predictor | items | unchanged | Jaccard |", "|---|---|---|---|---|"]
         for ds, preds in res["stability"].items():
             for name, s in preds.items():

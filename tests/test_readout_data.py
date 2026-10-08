@@ -188,3 +188,31 @@ def test_general_track_native_questions(tmp_path):
     assert "General decisions" in bench.format_bench(res)
     cmp = bench.compare(tmp_path / "run", tmp_path / "run", predictor="native@top1")
     assert set(cmp["macro"]["tracks"]) == {"mmlu_pro", "boolq", "sst5"}
+
+
+def test_refused_question_is_reported_with_the_server_reason():
+    from bzaf.readout import parse_answers
+
+    it = Item(id="x", dataset="d", state="s", question="q", options=["a", "b"], gold=[0])
+    answers = {"noulctx_0": {"type": "noul", "noul": 0.3}, "noulctx_1": {"type": "noul", "error": "invalid_model_output"}}
+    try:
+        parse_answers(it, answers)
+    except ValueError as e:
+        assert "noulctx_1" in str(e) and "invalid_model_output" in str(e)
+    else:
+        raise AssertionError("expected a ValueError")
+
+
+def test_server_side_question_errors_are_reported(tmp_path):
+    class PartlyFailing(FakeClient):
+        def decide(self, state, questions):
+            r = super().decide(state, questions)
+            r["answers"]["pick"] = {"type": "choice", "error": "max_length_exceeded"}
+            return r
+
+    items = load_synthetic(n=3, seed=1)
+    gold_by_state = {json.dumps(it.state, sort_keys=True): {it.options[j] for j in it.gold} for it in items}
+    out = tmp_path / "r.jsonl"
+    run_readout(PartlyFailing(gold_by_state, []), items, out, variants=["pick", "count"], log=lambda *_: None)
+    recs = [json.loads(line) for line in out.read_text().splitlines()]
+    assert all("max_length_exceeded" in r["error"] for r in recs)

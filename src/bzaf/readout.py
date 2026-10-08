@@ -81,6 +81,10 @@ def build_questions(item: Item, variants: Iterable[str] = VARIANTS) -> dict[str,
 def parse_answers(item: Item, answers: dict, sets: dict | None = None, thresholds: dict | None = None) -> dict:
     k = len(item.options)
     rec: dict = {}
+    bad = [(key, a) for key, a in answers.items() if isinstance(a, dict) and "error" in a]
+    if bad:  # a server can refuse single questions; say which and why instead of failing on a missing field
+        key, a = bad[0]
+        raise ValueError(f"{len(bad)} of {len(answers)} questions refused, first {key}: {a['error']}")
     if "noul_0" in answers:
         rec["noul"] = [float(answers[f"noul_{j}"]["noul"]) for j in range(k)]
     if "noulctx_0" in answers:
@@ -120,6 +124,10 @@ def read_item(client: DecisionClient, item: Item, variants: Iterable[str] = VARI
         answers.update(resp["answers"])
         sets.update(resp.get("sets") or {})
         thresholds.update(resp.get("thresholds") or {})
+    errors = {key: a["error"] for key, a in answers.items() if isinstance(a, dict) and "error" in a}
+    if errors:  # a server can fail single questions (e.g. input too long) while answering the rest
+        first = next(iter(errors))
+        raise RuntimeError(f"{len(errors)} of {len(answers)} questions failed on the server, e.g. {first}: {errors[first]}")
     rec = {"id": item.id, "dataset": item.dataset, "model": client.model, "k": len(item.options), "gold": item.gold,
            "variants": sorted(set(variants))}
     if "perm" in item.meta:  # options were shuffled (order-stability track): perm[j] = original index of option j
