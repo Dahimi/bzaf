@@ -1,7 +1,7 @@
 """Training and adapter checks on Modal. Our code and benchmark v0 (data/bench-v0, built with `bzaf bench prepare`)
 are uploaded; weights are cached on the bzaf-model-cache volume, runs are written to the bzaf-runs volume.
 
-    # 1. our adapter against the released model's recorded answers (real weights; FP32 and bf16)
+    # 1. our adapter against the released model's recorded answers (real weights; CPU FP32, GPU FP32 and bf16)
     modal run cloud/train_modal.py::golden --model vllm-sr/Decision-2.0-Eos-0.8B
 
     # 2. a training run (a smoke run first: tiny mixture, few steps, 20 items per track)
@@ -63,8 +63,10 @@ def golden(model: str = "vllm-sr/Decision-2.0-Eos-0.8B") -> list[dict]:
     from bzaf.train.decision2 import golden_check
 
     results = []
-    for autocast in (False, True):
-        r = golden_check(model, device="cuda", autocast=autocast)
+    # CPU FP32 is the reference's own setting (expect ~1e-6); GPU FP32 and bf16 differ by kernel numerics, as the
+    # runtime's own CPU and ROCm references do (up to ~1.5e-3 for Eos)
+    for device, autocast in (("cpu", False), ("cuda", False), ("cuda", True)):
+        r = golden_check(model, device=device, autocast=autocast)
         print(json.dumps({k: v for k, v in r.items() if k != "questions"}), flush=True)
         for qid, q in r["questions"].items():
             print(f"  {qid}: max |diff| {q['max_abs_diff']:.2e}  expected {q['expected']}  ours {q['ours']}", flush=True)
