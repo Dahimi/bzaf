@@ -32,7 +32,8 @@ image = modal.Image.debian_slim(python_version="3.12").pip_install(
 if FLA:
     image = image.pip_install("flash-linear-attention==0.5.2")
 image = (
-    image.env({"HF_HOME": "/cache/hf", "HF_HUB_DISABLE_PROGRESS_BARS": "1", "PYTHONUNBUFFERED": "1"})
+    image.env({"HF_HOME": "/cache/hf", "HF_HUB_DISABLE_PROGRESS_BARS": "1", "PYTHONUNBUFFERED": "1",
+               "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_dir("data/bench-v0", "/root/bench-v0")
     .add_local_python_source("bzaf")
 )
@@ -50,6 +51,10 @@ def train(name: str, args: str = "") -> dict:
     subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"], check=False)
     try:
         main(argv)
+    except Exception as e:  # re-raised as plain text: the local side has no torch to unpickle torch exceptions
+        import traceback
+
+        raise RuntimeError(f"{type(e).__name__}: {e}\n{traceback.format_exc()[-4000:]}") from None
     finally:
         cache.commit()
         runs.commit()

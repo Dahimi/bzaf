@@ -44,7 +44,7 @@ class TrainConfig:
     warmup_steps: int = 30
     max_tokens: int = 16384        # padded tokens per batch
     distill_weight: float = 1.0
-    grad_checkpointing: bool = False
+    grad_checkpointing: bool = True    # store layer inputs only, recompute in backward (~10x less memory)
     eval_base: bool = False
     eval_limit: int | None = None  # items per track (smoke tests)
     eval_tracks: list | None = None
@@ -121,11 +121,6 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
     model, pkg, tok = build_model(cfg, device)
     log(f"base {cfg.base} ({pkg.manifest.get('model_name')}), device {device}")
 
-    if cfg.eval_base:
-        log("evaluating the base model (untrained baselines)")
-        evaluate.run(model, pkg, tok, cfg.bench, out / "eval" / "base", "base", device, tracks=cfg.eval_tracks,
-                     limit=cfg.eval_limit, base=True, log=log)
-
     if rows is None:
         log("building the training mixture")
         rows = build_e02(cfg.seed, cfg.sizes, cfg.bench, log=log)
@@ -150,8 +145,14 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
     model.train()
     log_file = (out / "train_log.jsonl").open("w")
     step, t0, tokens, window = 0, time.perf_counter(), 0, []
+    first = True
     while step < total:
-        for idx in make_batches(examples, cfg.max_tokens, rng):
+        batches = make_batches(examples, cfg.max_tokens, rng)
+        if first:  # the largest batch first: a run that does not fit in memory fails in its first step, not hours later
+            big = max(range(len(batches)), key=lambda b: len(batches[b]) * max(len(examples[i].row.ids) for i in batches[b]))
+            batches.insert(0, batches.pop(big))
+            first = False
+        for idx in batches:
             if step >= total:
                 break
             exs = [examples[i] for i in idx]
@@ -194,9 +195,14 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
 
     model.backbone.save_pretrained(out / "adapter")
     torch.save({"head": model.head.state_dict(), "count_head": model.count_head.state_dict()}, out / "heads.pt")
+    model.eval()
     log("evaluating the trained model")
     evaluate.run(model, pkg, tok, cfg.bench, out / "eval" / "ours", "ours", device, tracks=cfg.eval_tracks,
                  limit=cfg.eval_limit, log=log)
+    if cfg.eval_base:  # after training, so a training failure costs minutes; the base = adapters off + original head
+        log("evaluating the base model (untrained baselines)")
+        evaluate.run(model, pkg, tok, cfg.bench, out / "eval" / "base", "base", device, tracks=cfg.eval_tracks,
+                     limit=cfg.eval_limit, base=True, log=log)
     return {"steps": step, "seconds": round(time.perf_counter() - t0), "out": str(out)}
 
 
@@ -206,7 +212,9 @@ def main(argv: list[str] | None = None) -> int:
         if f.name in ("sizes", "eval_tracks"):
             continue
         kind = type(f.default) if f.default is not None else (int if f.name in ("max_steps", "eval_limit") else str)
-        if kind is bool:
+        if kind is bool and f.default:
+            ap.add_argument(f"--no-{f.name.replace('_', '-')}", dest=f.name, action="store_false")
+        elif kind is bool:
             ap.add_argument(f"--{f.name.replace('_', '-')}", action="store_true")
         else:
             ap.add_argument(f"--{f.name.replace('_', '-')}", type=kind, default=f.default)
