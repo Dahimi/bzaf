@@ -54,7 +54,8 @@ in-domain tracks; order stability.
 
 ```bash
 # 1. adapter check on the real 4B weights (CPU FP32 must agree to 1e-4; GPU within the runtime's CPU-ROCm spread)
-uv run modal run cloud/train_modal.py::golden --model vllm-sr/Decision-2.0-Nox-4B
+BZAF_FLA=0 uv run modal run cloud/train_modal.py::golden --model vllm-sr/Decision-2.0-Nox-4B --checks cpu
+uv run modal run cloud/train_modal.py::golden --model vllm-sr/Decision-2.0-Nox-4B --checks cuda,cuda-bf16
 # 2. speed test, 40 steps each, no evaluation (~10 min, < $1 each); compare recent_tokens_per_s per dollar
 A="--base vllm-sr/Decision-2.0-Nox-4B --mix e02b --scale 0.05 --max-steps 40 --eval-tracks none"
 uv run modal run cloud/train_modal.py --name speed-l40s --args "$A"
