@@ -12,7 +12,8 @@ import math
 import os
 import random
 import time
-from dataclasses import asdict, dataclass, field
+from collections import Counter
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import torch
@@ -32,7 +33,9 @@ class TrainConfig:
     out: str = "runs/e02"
     bench: str = "data/bench-v0"
     seed: int = 0
-    sizes: dict = field(default_factory=lambda: dict(E02_SIZES))
+    mix: str = "e02"               # training mixture: e02 (data.build_e02) or e02b (mix.build_e02b, many families)
+    sizes: dict | None = None      # rows per source (default: the mixture's own sizes)
+    drop: str = ""                 # comma list of sources to leave out (e.g. the borderline ones, E02b run C)
     lora_r: int = 16
     lora_alpha: int = 32
     lr_lora: float = 2e-4
@@ -63,14 +66,14 @@ class Example:
 
 
 def render_rows(rows: list[TrainRow], pkg: Package, tok, log=print) -> list[Example]:
-    out, skipped = [], 0
+    out, skipped = [], Counter()
     for r in rows:
         try:
             out.append(Example(render_question(tok, r.state, r.question, pkg.max_input_tokens), r.loss, r.gold, r.source))
         except ValueError:
-            skipped += 1
+            skipped[r.source] += 1
     if skipped:
-        log(f"  skipped {skipped} rows longer than the model limit")
+        log(f"  skipped {sum(skipped.values())} rows longer than the model limit: {dict(skipped)}")
     return out
 
 
@@ -151,11 +154,24 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
     out.mkdir(parents=True, exist_ok=True)
     (out / "config.json").write_text(json.dumps(asdict(cfg), indent=2))
     model, pkg, tok = build_model(cfg, device)
-    log(f"base {cfg.base} ({pkg.manifest.get('model_name')}), device {device}")
+    log(f"base {cfg.base} ({pkg.manifest.get('model_name')}, max {pkg.max_input_tokens} input tokens), device {device}")
 
     if rows is None:
-        log("building the training mixture")
-        rows = build_e02(cfg.seed, cfg.sizes, cfg.bench, log=log)
+        log(f"building the training mixture ({cfg.mix})")
+        sizes = {**(cfg.sizes or {}), **{name: 0 for name in filter(None, cfg.drop.split(","))}}
+        if cfg.mix == "e02b":
+            from .data import multi_question
+            from .mix import TOKEN_BUDGET, build_e02b
+
+            def measure(it):  # exact length with the model's own tokenizer and question format
+                return len(render_question(tok, it.state, multi_question(it), 1 << 30).ids)
+
+            rows = build_e02b(cfg.seed, sizes, cfg.bench, stats_path=out / "mixture_stats.json",
+                              token_budget=min(TOKEN_BUDGET, pkg.max_input_tokens), measure=measure, log=log)
+        elif cfg.mix == "e02":
+            rows = build_e02(cfg.seed, {**E02_SIZES, **sizes}, cfg.bench, log=log)
+        else:
+            raise ValueError(f"unknown mix {cfg.mix!r}")
     examples = render_rows(rows, pkg, tok, log)
     log(f"{len(examples)} training rows: " + ", ".join(f"{k} {sum(e.loss == k for e in examples)}" for k in ("set", "distill")))
 
@@ -299,7 +315,12 @@ def main(argv: list[str] | None = None, on_checkpoint=None) -> int:
     ap.add_argument("--eval-tracks", default=None, help="comma list of benchmark tracks to evaluate (default all)")
     a = ap.parse_args(argv)
     kw = {k: v for k, v in vars(a).items() if k in TrainConfig.__dataclass_fields__ and k != "eval_tracks"}
-    cfg = TrainConfig(**kw, sizes={k: max(1, int(v * a.scale)) for k, v in E02_SIZES.items()},
+    if a.mix == "e02b":
+        from .mix import default_sizes
+        defaults = default_sizes()
+    else:
+        defaults = E02_SIZES
+    cfg = TrainConfig(**kw, sizes={k: max(1, int(v * a.scale)) for k, v in defaults.items()},
                       eval_tracks=a.eval_tracks.split(",") if a.eval_tracks else None)
     print(train(cfg, os.environ.get("BZAF_DEVICE"), on_checkpoint=on_checkpoint))
     return 0

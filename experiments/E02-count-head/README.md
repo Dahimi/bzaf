@@ -206,19 +206,40 @@ Same data, seed and settings, `--set-loss sigmoid` (~35 min, about $2). Files: `
   base's own per-option yes/no questions, summed: +0.59). With the true count, both pick the same options as the base
   on every held-out track (within ~2 points).
 
-**SATA by source subset** (test split, exact-set %; corrected description of SATA, 2026-10-08):
+**SATA by source subset and every held-out track by gold count** (test split, exact-set %, from
+[breakdown.py](../E02b-diverse-data/breakdown.py); B = per track the better of `noul_ctx+platt` / `pick+dev_prior`;
+corrected description of SATA, 2026-10-08; table regenerated 2026-10-09 with the scorer's own predictions, which differ
+by up to 2 points from a first ad-hoc count):
 
-| subset | items | gold size | count head / sigmoid | ranking + true count: ours / base |
+| SATA subset | items | B | count_head | sigmoid |
 |---|---|---|---|---|
-| reading comprehension (story plots) | 242 | 2.9 | 34.3 / 35.5 | 66.9 / 71.9 |
-| toxicity categories | 200 | 2.5 | 0.0 / 0.0 | 2.5 / 19.0 |
-| Reuters news topics | 164 | 2.3 | 22.6 / 4.9 | 70.7 / 58.5 |
-| MeSH root categories | 187 | 5.7 | 0.0 / 0.0 | 3.2 / 1.6 |
-| EUR-Lex concepts | 205 | 5.3 | 2.4 / 2.0 | 35.6 / 26.8 |
-| business-news events | 139 | 2.6 | 13.7 / 5.8 | 33.1 / 31.7 |
+| d1 story reading comprehension | 242 | 38.8 | 32.2 | 33.1 |
+| d2 toxicity | 200 | 15.5 | 0.0 | 0.0 |
+| d3 Reuters topics | 164 | 45.7 | 22.0 | 4.9 |
+| d4 MeSH | 187 | 0.5 | 0.0 | 0.0 |
+| d5 EUR-Lex | 205 | 2.4 | 2.0 | 2.0 |
+| d6 business events | 139 | 18.7 | 12.9 | 5.8 |
 
-SATA is six task families, not one; MeSH and toxicity are near zero for every model even with the true count, and
-the toxicity subset is the one place where training clearly hurt the ranking (2.5 vs 19.0).
+| track, gold count | items | B | count_head | sigmoid |
+|---|---|---|---|---|
+| sata, 2–4 | 834 | 27.7 | 16.3 | 11.4 |
+| sata, 5–9 | 288 | 0.3 | 0.0 | 1.7 |
+| sata, 10–99 | 15 | 0.0 | 0.0 | 0.0 |
+| nlupp, 0 | 58 | 44.8 | 70.7 | 98.3 |
+| nlupp, 1 | 95 | 31.6 | 72.6 | 52.6 |
+| nlupp, 2–4 | 264 | 15.9 | 0.8 | 5.7 |
+| nlupp, 5–9 | 7 | 0.0 | 0.0 | 0.0 |
+| ecthr, 0 | 26 | 46.2 | 0.0 | 76.9 |
+| ecthr, 1 | 156 | 46.2 | 56.4 | 13.5 |
+| ecthr, 2–4 | 35 | 0.0 | 5.7 | 2.9 |
+| unfair_tos, 0 | 499 | 99.6 | 0.0 | 88.8 |
+| unfair_tos, 1 | 62 | 8.1 | 58.1 | 64.5 |
+| unfair_tos, 2–4 | 5 | 0.0 | 40.0 | 0.0 |
+
+SATA is six task families, not one; MeSH is near zero for every model. By gold count, the count head never answers
+"none" where none is right (UNFAIR-ToS, ECtHR: 0.0) and the sigmoid rarely answers 2+ where it should.
+
+**Next:** [E02b](../E02b-diverse-data/), the same recipe on diverse, count-decoupled data (D21 hold-out).
 
 **Reading:** the formulation decides how the model fails on a new family, not whether it transfers. Both learned the
 trained families (in-domain gains up to +78 points) and neither learned to judge new families' options in absolute

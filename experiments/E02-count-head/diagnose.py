@@ -3,6 +3,7 @@ selection, and does its count carry signal? Reads the in-process evaluation reco
 
     tar xzf experiments/E02-count-head/results/eval-records.tgz -C runs/e02 && find runs/e02 -name '._*' -delete
     uv run python experiments/E02-count-head/diagnose.py runs/e02/eval > experiments/E02-count-head/results/diagnosis.md
+    # another run against the same base:  diagnose.py <run>/eval/ours runs/e02/eval/base
 """
 import json
 import sys
@@ -31,13 +32,14 @@ def spearman(a, b) -> float:
     return float(np.corrcoef(ra, rb)[0, 1])
 
 
-def main(root: Path, tracks=("ecthr", "nlupp", "sata", "unfair_tos", "goemotions", "synthetic")) -> None:
+def main(root: Path, tracks=("ecthr", "nlupp", "sata", "unfair_tos", "goemotions", "synthetic"), base_dir: Path | None = None) -> None:
     print("| track | test | gold size (share empty) | ours E[size] / mode size / mean P(0) | ours ranking + true count "
           "| base Choice + true count | ours ranking + dev count prior: exact / log-loss | count ↔ gold rank corr: ours / "
           "base 'how many' / base Σ yes-no | 'none' AUC: ours P(0) / base 1 − max yes-no |")
     print("|---|---|---|---|---|---|---|---|---|")
     for t in tracks:
-        ours, base = load(root / "ours" / f"{t}.jsonl"), load(root / "base" / f"{t}.jsonl")
+        ours = load((root / "ours" if base_dir is None else root) / f"{t}.jsonl")
+        base = load((base_dir or root / "base") / f"{t}.jsonl")
         ids = [i for i in ours if i in base]
         dev, test = [i for i in ids if is_dev(i, 0.3)], [i for i in ids if not is_dev(i, 0.3)]
         prior = np.full(max(ours[i]["k"] for i in ids) + 1, 0.5)   # dev count histogram, add-0.5 smoothing
@@ -74,4 +76,4 @@ def main(root: Path, tracks=("ecthr", "nlupp", "sata", "unfair_tos", "goemotions
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]))
+    main(Path(sys.argv[1]), base_dir=Path(sys.argv[2]) if len(sys.argv) > 2 else None)

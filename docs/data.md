@@ -48,3 +48,18 @@ options to long / many options; a fixed share of the base's single-answer data i
 | GoEmotions | train split for training, test split for evaluation | Apache-2.0 | 2026-10-03 |
 | Synthetic orders (ours) | training and evaluation (different seeds) | ours | — |
 | Kev `decision-v7` | replay (if Kev is the base) | per source, listed in Kev's model cards | to check |
+| QAMPARI | training (E02b) | CC0; proof sentences from Wikipedia (CC BY-SA) | 2026-10-09 (repo README) |
+| Qasper v0.3 | training (E02b) | CC BY 4.0 | 2026-10-09 (archived HF card; re-check live card) |
+| WiCE | training (E02b) | annotations ODC-BY; claims Wikipedia (CC BY-SA); cited pages under Common Crawl terms | 2026-10-09 (repo LICENSE) |
+| SQuAD 2.0 | training (E02b), questions only | CC BY-SA 4.0 | to re-check (dataset page unreachable from our environment) |
+| Amazon ESCI | training (E02b), US train split | Apache-2.0 | 2026-10-09 (repo) |
+| WANDS | training (E02b) | MIT | 2026-10-09 (repo) |
+| DBpedia-Entity v2 | training (E02b) | judgements MIT; entity names from DBpedia (CC BY-SA) | 2026-10-09 (repo LICENSE) |
+| Re-DocRED | training (E02b) | MIT; relation names from Wikidata (CC0) | 2026-10-09 (repo LICENSE) |
+| MAMS (ACSA) | training (E02b) | Apache-2.0 | 2026-10-09 (repo LICENSE) |
+| DBpedia-14 | training (E02, E02b) | CC BY-SA 3.0 | 2026-10-08 |
+| BoolQ, HellaSwag train | replay (E02, E02b) | CC BY-SA 3.0, MIT | 2026-10-08 |
+| SST-5 train | replay (E02, E02b) | research use | **replace before any release** |
+
+The full survey behind these choices (candidates, rejected licences, curation evidence, facts still to re-check) is
+[data-survey.md](data-survey.md).

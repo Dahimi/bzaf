@@ -9,6 +9,7 @@ are uploaded; weights are cached on the bzaf-model-cache volume, runs are writte
     modal run --detach cloud/train_modal.py --name e02 --args "--eval-base"   # --detach: survives a closed terminal
     modal run --detach cloud/train_modal.py --name e02 --args "--eval-base --resume"   # after an interruption
     modal run --detach cloud/train_modal.py --name e02-sigmoid --args "--set-loss sigmoid"   # E02 ablation
+    modal run --detach cloud/train_modal.py --name e02b --args "--mix e02b"                  # E02b: the diverse mixture
 
     # 3. fetch the evaluation records and score them like any readout
     modal volume get bzaf-runs e02/eval runs/e02/
@@ -35,7 +36,8 @@ if FLA:
     image = image.pip_install("flash-linear-attention==0.5.2")
 image = (
     image.env({"HF_HOME": "/cache/hf", "HF_HUB_DISABLE_PROGRESS_BARS": "1", "PYTHONUNBUFFERED": "1",
-               "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
+               "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+               "BZAF_RAW": "/cache/raw"})  # downloaded source files, kept on the cache volume (E02b: ~1.5 GB)
     .add_local_dir("data/bench-v0", "/root/bench-v0")
     .add_local_python_source("bzaf")
 )
