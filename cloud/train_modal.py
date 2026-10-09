@@ -10,6 +10,10 @@ are uploaded; weights are cached on the bzaf-model-cache volume, runs are writte
     modal run --detach cloud/train_modal.py --name e02 --args "--eval-base --resume"   # after an interruption
     modal run --detach cloud/train_modal.py --name e02-sigmoid --args "--set-loss sigmoid"   # E02 ablation
     modal run --detach cloud/train_modal.py --name e02b --args "--mix e02b"                  # E02b: the diverse mixture
+    # E03a (Nox-4B): adapter check, then a speed test per setting (40 steps, no evaluation), then the run
+    modal run cloud/train_modal.py::golden --model vllm-sr/Decision-2.0-Nox-4B
+    BZAF_GPU=H100 modal run cloud/train_modal.py --name speed-h100 \
+        --args "--base vllm-sr/Decision-2.0-Nox-4B --mix e02b --scale 0.05 --max-steps 40 --eval-tracks none"
 
     # 3. fetch the evaluation records and score them like any readout
     modal volume get bzaf-runs e02/eval runs/e02/
@@ -66,7 +70,7 @@ def train(name: str, args: str = "") -> dict:
     return {"name": name}
 
 
-@app.function(image=image, gpu=GPU, volumes={"/cache": cache}, timeout=3600)
+@app.function(image=image, gpu=GPU, volumes={"/cache": cache}, memory=65536, timeout=3600)  # 4B in FP32 on CPU: ~16 GB
 def golden(model: str = "vllm-sr/Decision-2.0-Eos-0.8B") -> list[dict]:
     import json
 

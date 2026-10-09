@@ -125,6 +125,63 @@ class OursSet(Predictor):
         return Prediction(set(dist.mode()), dist)
 
 
+class OursCalibrated(Predictor):
+    """Our model's set distribution adapted to a task with k labelled dev items (default: the whole dev split, the same
+    labels `pick+dev_prior` and `noul_ctx+platt` fit on), using the same add-one count histogram as `pick+dev_prior`.
+
+    prior  the histogram replaces the model's count distribution (the item's own count evidence is dropped)
+    match  the model's count distribution is reweighted, P'(s | item) ∝ P(s | item) · hist(s) / mean_dev P(s), so its
+           average over the dev items matches the task's histogram while each item keeps its own count evidence
+    """
+    needs = ("multi_z", "multi_count")
+
+    def __init__(self, mode: str = "match", k: int | None = None):
+        self.mode, self.k = mode, k
+        self.name = f"ours+dev_{mode}" + (f"@{k}" if k else "")
+        self.hist: np.ndarray | None = None
+        self.ratio: np.ndarray | None = None
+
+    @staticmethod
+    def _count(rec: dict, width: int) -> np.ndarray:
+        c = np.zeros(width)
+        n = min(width, len(rec["multi_count"]), rec["k"] + 1)
+        c[:n] = rec["multi_count"][:n]
+        return c / max(c.sum(), 1e-12)
+
+    def fit(self, dev):
+        import hashlib
+
+        dev = [r for r in dev if self.available(r)]
+        if self.k:  # a fixed pseudo-random subset of the dev split
+            dev = sorted(dev, key=lambda r: hashlib.md5(r["id"].encode()).hexdigest())[: self.k]
+        width = max([r["k"] for r in dev] + [1]) + 1
+        h = np.ones(width)
+        for r in dev:
+            h[len(r["gold"])] += 1
+        self.hist = h / h.sum()
+        if self.mode == "match" and dev:
+            mean = np.mean([self._count(r, width) for r in dev], axis=0)
+            self.ratio = np.clip(self.hist / np.maximum(mean, 1e-6), 1e-3, 1e3)
+        return self
+
+    def predict(self, rec):
+        width = rec["k"] + 1
+        if self.mode == "prior" and self.hist is not None:
+            c = np.full(width, 1e-6)
+            n = min(len(self.hist), width)
+            c[:n] = self.hist[:n]
+        else:
+            c = self._count(rec, width)
+            if self.ratio is not None:
+                r = np.ones(width)
+                n = min(len(self.ratio), width)
+                r[:n] = self.ratio[:n]
+                c = c * r
+        c = c / c.sum()
+        dist = SetDistribution.from_logits_and_count(np.asarray(rec["multi_z"], dtype=float), c)
+        return Prediction(set(dist.mode()), dist)
+
+
 class ChoiceTop1(Predictor):
     """Today's single-answer Choice: always exactly one option."""
     name, needs = "pick@top1", ("pick",)
@@ -222,6 +279,10 @@ def default_predictors() -> list[Predictor]:
         ScoresPlusDevPrior("noul_ctx"),
         NativeTop1(),
         OursSet(),
+        OursCalibrated("prior"),
+        OursCalibrated("prior", k=16),
+        OursCalibrated("prior", k=64),
+        OursCalibrated("match"),
         ShippedThreshold("set"),
         Independent("set", calibrate=True),
         OracleCount("set"),

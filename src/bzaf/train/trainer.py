@@ -219,6 +219,7 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
     model.train()
     log_file = (out / "train_log.jsonl").open("a" if skip else "w")
     step, t0, tokens, window = 0, time.perf_counter(), 0, []
+    t_last, tokens_last = t0, 0
     first = True
     if done:
         step = total
@@ -269,14 +270,16 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
             if step % cfg.log_every == 0 or step == total:
                 avg = {k: sum(w[k] for w in window if k in w) / max(1, sum(k in w for w in window))
                        for k in {k for w in window for k in w}}
+                now = time.perf_counter()
                 rec = {"step": step, "of": total, "lr_scale": round(lr_scale(step), 4),
-                       "tokens_per_s": round(tokens / (time.perf_counter() - t0)),
+                       "tokens_per_s": round(tokens / (now - t0)),
+                       "recent_tokens_per_s": round((tokens - tokens_last) / max(now - t_last, 1e-9)),
                        "eta_min": round((time.perf_counter() - t0) / (step - skip) * (total - step) / 60, 1),
                        **{k: round(v, 4) for k, v in avg.items()}}
                 log_file.write(json.dumps(rec) + "\n")
                 log_file.flush()
                 log(json.dumps(rec))
-                window = []
+                window, t_last, tokens_last = [], now, tokens
             if step % cfg.save_every == 0 and step < total:
                 save_checkpoint(step)
     log_file.close()
@@ -289,6 +292,8 @@ def train(cfg: TrainConfig, device: str | None = None, rows: list[TrainRow] | No
         heads["set_bias"] = model.set_bias.detach().cpu()
     torch.save(heads, out / "heads.pt")
     model.eval()
+    if cfg.eval_tracks == ["none"]:
+        return {"steps": step, "resumed_from": skip, "seconds": round(time.perf_counter() - t0), "out": str(out)}
     log("evaluating the trained model")
     evaluate.run(model, pkg, tok, cfg.bench, out / "eval" / "ours", "ours", device, tracks=cfg.eval_tracks,
                  limit=cfg.eval_limit, log=log, on_track=on_checkpoint)

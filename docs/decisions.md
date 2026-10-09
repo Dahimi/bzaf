@@ -163,3 +163,14 @@ Sources allowed only under a looser rule (MAVEN, DROP / TAT-QA multi-span, hate-
 separate "seen-family" run, reported apart, never in the main line. Teacher data must not recreate a held-out family.
 Why: only a family-level hold-out tests whether a better data mix fixes E02's failure to transfer across families;
 loosening the rule after seeing E02's result would weaken every zero-shot claim.
+
+## D22 — Move the count question to 4B without E02 passing G2 (2026-10-09)
+E02 and E02b failed G2 at 0.8B. E02b showed that diverse data makes option selection transfer to an unseen family
+(SATA +8.7 with the true count) but that the count stays a learned prior. The untrained bases explain why more 0.8B
+variants are low-leverage: judging options on their own, which the count needs, is weak at 0.8B and present at 4B
+(SATA, own yes/no per option + Platt: Eos-0.8B 4.2 vs Nox-4B 30.0; own "how many" question, no labels: 6.1 vs 29.8;
+NLU++ "how many": 29.0 vs 38.2, above the label-using baseline at 4B). So the next experiment (E03a) is E02b's recipe
+and data, unchanged, on Nox-4B. G2's bar is unchanged (and higher at 4B, since the 4B baseline is stronger); a
+calibrated gate, pre-registered with E03a, adds the comparison with the same labelled examples the baselines use.
+The extra 0.8B runs (count head reading option scores, sigmoid on E02b data, run C) are dropped. Money comes from the
+4B phase (~$60); data v1 (many more task families, open-teacher labels) is built in parallel for E03b.

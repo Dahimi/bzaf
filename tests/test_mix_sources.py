@@ -202,3 +202,24 @@ def test_build_e02b_offline(tmp_path):
     assert Counter(r.id.rsplit("#", 1)[0] for r in sets).most_common(1)[0][1] <= 3
     stats = json.loads((tmp_path / "s.json").read_text())
     assert stats["set_rows"] == 600 and set(stats["per_source"]) == {"many", "few", "boolq_distill"}
+
+
+def test_ours_calibrated_uses_the_dev_count_histogram():
+    import numpy as np
+
+    from bzaf.predictors import OursCalibrated
+
+    def rec(i, gold, z, count):
+        return {"id": f"t:{i}", "k": len(z), "gold": gold, "multi_z": z, "multi_count": count}
+
+    # the model always says "none" (count 0), but the task always has exactly one answer
+    z, count = [3.0, 0.0, -1.0], [0.9, 0.05, 0.03, 0.02]
+    dev = [rec(i, [0], z, count) for i in range(40)]
+    prior = OursCalibrated("prior").fit(dev)
+    assert prior.predict(rec(99, [0], z, count)).subset == {0}
+    match = OursCalibrated("match").fit(dev)
+    assert match.predict(rec(99, [0], z, count)).subset == {0}
+    matched = match.ratio * np.array(count)
+    assert np.allclose(matched / matched.sum(), match.hist)  # identical dev items: the average becomes the histogram
+    few = OursCalibrated("prior", k=4).fit(dev)
+    assert few.hist[1] == 5 / (4 + 4)  # add-one over counts 0..3, four labelled items with one answer

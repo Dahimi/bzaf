@@ -178,6 +178,12 @@ In-domain: GoEmotions 51.6 → 21.6 (answers "none" on 55 % of items that always
    test per track): macro −2.9 [−5.5, −0.4]: UNFAIR-ToS +28.6, SATA +1.5 [−0.3, +3.3], NLU++ −7.6, ECtHR −34.1
    (always answering one article is hard to beat there). The sigmoid run, for comparison: +0.7 [−1.8, +3.1].
 
+Calibrated predictors (added afterwards for E03a's calibrated gate; − B over H, exact-set / log-loss):
+`ours+dev_prior` (the dev count histogram replaces the model's count) +2.8 [+1.3, +4.4] / +0.00 [−0.03, +0.03];
+`ours+dev_match` (the model's count reweighted to the dev histogram) +0.8 [−1.0, +2.6] / +0.27 [+0.20, +0.33]; the same
+for E02: +0.9 [−0.4, +2.2] / −0.00 and −0.3 / +0.37. At 0.8B the model's own count evidence hurts even after
+reweighting.
+
 **Reading:** diverse data improved what transfers least by accident, selection, and fixed nothing about the count,
 which is still a prior the model carries from its training mix rather than a reading of the item. The decision of
 how many options are right depends on each dataset's labelling conventions; the baselines learn it from labels, and
