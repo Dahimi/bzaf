@@ -128,4 +128,57 @@ COPYFILE_DISABLE=1 tar czf $R/eval-records.tgz -C runs/e02b eval
 
 ## Results
 
-*Not run yet.*
+Run A, 2026-10-09: 3,453 steps; 45,000 multi rows + 14,875 replay rows; 46M multi-row tokens (mixture as planned:
+answers 0: 30 %, 1: 20 %, 2–4: 29 %, 5–9: 12 %, 10–19: 6 %, 20–32: 3 %); 7.8k tokens/s on one L40S. Files in
+[results/](results/).
+
+### G2: failed
+
+| condition | result | |
+|---|---|---|
+| 1. exact-set, `ours@mode` − B, macro over H | **−11.1** [−13.5, −8.8]: ECtHR −25.4 [−32.7, −18.4], NLU++ −5.2 [−9.9, −0.2], SATA −13.6 [−16.2, −11.2], UNFAIR-ToS −0.4 [−3.0, +2.5] | fails |
+| 2. set log-loss, `ours@mode` − B, macro over H | **+0.94** [+0.85, +1.02] (E02: +1.82); UNFAIR-ToS +0.05 [−0.02, +0.11], the others worse | fails |
+| 3. general track, `native@top1`, ours − base, macro over 7 sets | **+0.57** [−1.21, +2.31] (MMLU-Pro +6.2 [+1.9, +10.9], HellaSwag −4.0 [−9.1, +0.5]) | passes |
+
+No held-out track is better than B on either condition (UNFAIR-ToS ties), so the pre-registered branch is the last
+one: data diversity alone does not make the count transfer at 0.8B; stop and choose among a count head that reads
+per-option evidence, teacher-labelled families, or a per-task prior correction, before any 4B spend.
+
+### What changed against E02
+
+| held-out track | gold size (share empty) | E02 → E02b exact-set | E02 → E02b mean answer size | ranking + true count: E02b − base [95 % CI] |
+|---|---|---|---|---|
+| ECtHR | 1.09 (12 %) | 41.5 → 13.4 | 1.08 → 0.08 | −3.2 [−6.9, +0.9] |
+| NLU++ | 1.93 (14 %) | 28.5 → 21.5 | 0.90 → 0.33 | −1.2 [−3.8, +1.4] |
+| SATA | 3.60 (0 %) | 12.7 → 7.6 | 1.93 → 2.38 | **+8.7 [+6.2, +11.3]** (E02: −0.2) |
+| UNFAIR-ToS | 0.13 (88 %) | 6.7 → 88.3 | 1.07 → 0.14 | +0.7 [−0.2, +1.8] |
+
+In-domain: GoEmotions 51.6 → 21.6 (answers "none" on 55 % of items that always have an answer), synthetic 88.3 →
+91.7, wide 95.3 → 94.4. Order stability (answer unchanged after shuffling): GoEmotions 94 %, NLU++ 91 %, SATA 97 %
+(E02: 87 / 84 / 71 %).
+
+1. **Selection now transfers to one held-out family.** Given the true count, the model picks SATA's answer sets
+   better than the base (+8.7, CI above 0; E02 and the sigmoid run did not). By SATA subset (true count, E02b / E02 /
+   base): Reuters topics 82.9 / 70.7 / 58.5, EUR-Lex concepts 48.8 / 35.6 / 26.8, business events 45.3 / 33.1 / 31.7,
+   story reading comprehension 69.4 / 66.9 / 71.9, toxicity 18.0 / 2.5 / 19.0 (E02's damage undone), MeSH 3.2 /
+   3.2 / 1.6. The gains are in tagging-like subsets; whether DBpedia-14 (subject tagging, borderline under D21) drives
+   them is what run C would measure.
+2. **The count flipped from "always some" to "none when unsure".** On unfamiliar tasks the model puts about half its
+   probability on "none" (mean P(0): ECtHR 0.50, NLU++ 0.55, UNFAIR-ToS 0.68), so the most likely set is empty even
+   where the expected count is right (ECtHR: expected 1.00 vs gold 1.09, but answer size 0.08). E02 failed one way,
+   E02b the other: in both the count is a learned prior, not read from the item.
+3. **The count head still does not read SATA's count** (rank correlation with the gold count +0.01), but simple
+   statistics of the model's own option scores do (number of options above the uniform probability +0.33, perplexity
+   of the option distribution +0.37; the base's summed yes/no answers +0.59). On NLU++ it is the reverse (count head
+   +0.50, option-score statistics −0.12 to −0.16); on ECtHR nothing has signal.
+4. **Given the information the baselines get, E02b beats them** (exploratory, not pre-registered): its own ranking
+   with each track's dev count prior − B, exact-set: ECtHR +0.9 [−3.7, +5.1], NLU++ +7.8 [+4.2, +11.3], SATA +3.7
+   [+1.8, +5.7], UNFAIR-ToS −0.5 [−1.6, +0.4]; macro **+3.0 [+1.4, +4.5]** (E02 with the same treatment: about +0.9).
+5. **Against the base's label-free predictors** (`pick+count`, `noul_ctx+count`, `pick@top1`, `noul_ctx@0.5`, best on
+   test per track): macro −2.9 [−5.5, −0.4]: UNFAIR-ToS +28.6, SATA +1.5 [−0.3, +3.3], NLU++ −7.6, ECtHR −34.1
+   (always answering one article is hard to beat there). The sigmoid run, for comparison: +0.7 [−1.8, +3.1].
+
+**Reading:** diverse data improved what transfers least by accident, selection, and fixed nothing about the count,
+which is still a prior the model carries from its training mix rather than a reading of the item. The decision of
+how many options are right depends on each dataset's labelling conventions; the baselines learn it from labels, and
+with the same labels our model is now ahead.
