@@ -78,6 +78,15 @@ cp runs/e03a/train_log.jsonl runs/e03a/config.json runs/e03a/mixture_stats.json 
 COPYFILE_DISABLE=1 tar czf $R/eval-records.tgz -C runs/e03a eval
 ```
 
+## Checks before the run (2026-10-09)
+
+- **Adapter on Nox-4B** (revision 25e8f67), the runtime's recorded answers: CPU FP32 max |diff| 1.1e-7 (criterion
+  1e-4: passes); GPU FP32 2.1e-4 and bf16 2.7e-3, the same size as Eos (2.7e-4, 2.1e-3), i.e. kernel numerics.
+- **Speed** (40 steps of the E02b mixture at 5 %, tokens per second over the last 10-step windows; early steps include
+  kernel tuning): L40S ~1.4–1.8k; H100 ~2.7–4.4k; H100 without gradient checkpointing runs out of memory (80 GB).
+  H100 is about twice as fast for about twice the price per hour, so similar cost and half the time: **chosen H100,
+  gradient checkpointing on.** Expected ~50M tokens → ~4 h of training plus evaluation, about $18–22.
+
 ## Results
 
 *Not run yet.*
