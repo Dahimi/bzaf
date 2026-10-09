@@ -1,0 +1,161 @@
+{
+  "set_rows": 45000,
+  "distill_rows": 14875,
+  "set_tokens": 46285386,
+  "answers": {
+    "0": 0.303,
+    "1": 0.201,
+    "10-19": 0.057,
+    "2-4": 0.287,
+    "20-32": 0.031,
+    "5-9": 0.121
+  },
+  "options": {
+    "101-255": 0.005,
+    "11-30": 0.314,
+    "2-4": 0.186,
+    "31-100": 0.158,
+    "5-10": 0.337
+  },
+  "tokens": {
+    "0-511": 0.545,
+    "2048-4095": 0.072,
+    "4096-8191": 0.071,
+    "512-2047": 0.312
+  },
+  "share_correct": {
+    "0-5": 0.381,
+    "21-50": 0.205,
+    "51-100": 0.222,
+    "6-20": 0.192
+  },
+  "per_source": {
+    "qampari": {
+      "rows": 7000,
+      "empty": 0.254,
+      "mean_answers": 5.23,
+      "mean_options": 26.9,
+      "mean_tokens": 2012
+    },
+    "qasper": {
+      "rows": 2500,
+      "empty": 0.397,
+      "mean_answers": 1.4,
+      "mean_options": 20.4,
+      "mean_tokens": 4361
+    },
+    "wice": {
+      "rows": 1500,
+      "empty": 0.313,
+      "mean_answers": 2.47,
+      "mean_options": 31.2,
+      "mean_tokens": 2930
+    },
+    "squad2": {
+      "rows": 5000,
+      "empty": 0.295,
+      "mean_answers": 2.86,
+      "mean_options": 9.1,
+      "mean_tokens": 466
+    },
+    "esci": {
+      "rows": 6000,
+      "empty": 0.2,
+      "mean_answers": 7.24,
+      "mean_options": 10.6,
+      "mean_tokens": 448
+    },
+    "wands": {
+      "rows": 2500,
+      "empty": 0.223,
+      "mean_answers": 6.6,
+      "mean_options": 25.1,
+      "mean_tokens": 820
+    },
+    "dbpedia_entity": {
+      "rows": 1500,
+      "empty": 0.259,
+      "mean_answers": 5.04,
+      "mean_options": 29.0,
+      "mean_tokens": 667
+    },
+    "redocred": {
+      "rows": 6000,
+      "empty": 0.327,
+      "mean_answers": 2.12,
+      "mean_options": 29.5,
+      "mean_tokens": 869
+    },
+    "mams": {
+      "rows": 3000,
+      "empty": 0.401,
+      "mean_answers": 1.19,
+      "mean_options": 4.2,
+      "mean_tokens": 163
+    },
+    "goemotions": {
+      "rows": 3000,
+      "empty": 0.409,
+      "mean_answers": 1.11,
+      "mean_options": 10.7,
+      "mean_tokens": 248
+    },
+    "goemotions_merged": {
+      "rows": 1000,
+      "empty": 0.36,
+      "mean_answers": 1.63,
+      "mean_options": 11.0,
+      "mean_tokens": 294
+    },
+    "dbpedia_merged": {
+      "rows": 2000,
+      "empty": 0.364,
+      "mean_answers": 1.38,
+      "mean_options": 6.6,
+      "mean_tokens": 388
+    },
+    "synthetic": {
+      "rows": 3000,
+      "empty": 0.302,
+      "mean_answers": 2.14,
+      "mean_options": 4.6,
+      "mean_tokens": 217
+    },
+    "wide": {
+      "rows": 1000,
+      "empty": 0.364,
+      "mean_answers": 1.66,
+      "mean_options": 28.4,
+      "mean_tokens": 663
+    },
+    "boolq_distill": {
+      "rows": 3877,
+      "empty": 0.0,
+      "mean_answers": 0.0,
+      "mean_options": 0.0,
+      "mean_tokens": 0
+    },
+    "hellaswag_distill": {
+      "rows": 3998,
+      "empty": 0.0,
+      "mean_answers": 0.0,
+      "mean_options": 0.0,
+      "mean_tokens": 0
+    },
+    "sst5_distill": {
+      "rows": 3500,
+      "empty": 0.0,
+      "mean_answers": 0.0,
+      "mean_options": 0.0,
+      "mean_tokens": 0
+    },
+    "dbpedia_distill": {
+      "rows": 3500,
+      "empty": 0.0,
+      "mean_answers": 0.0,
+      "mean_options": 0.0,
+      "mean_tokens": 0
+    }
+  },
+  "token_budget": 7000
+}
