@@ -89,4 +89,44 @@ COPYFILE_DISABLE=1 tar czf $R/eval-records.tgz -C runs/e03a eval
 
 ## Results
 
-*Not run yet.*
+Run 2026-10-09/10 on one H100: 3,453 steps, the E02b mixture unchanged, 6.4k tokens/s. Files in [results/](results/)
+(`vs-e02b-exact.md` and `breakdown.md` came out empty: the E02b records were not on the machine that scored).
+
+### G2 and G2-cal: both failed; the general track also failed (to verify)
+
+| condition | `ours@mode` (zero-shot) | `ours+dev_prior` (calibrated) |
+|---|---|---|
+| exact-set − B, macro over H | **−11.1** [−13.6, −8.8] | **+0.2** [−1.8, +2.3]: ECtHR +6.0 [+0.0, +11.5], SATA +1.2, NLU++ −2.1, UNFAIR-ToS −4.2 |
+| set log-loss − B, macro over H | **+0.50** [+0.43, +0.57] | **+0.09** [+0.04, +0.14] |
+| general track `native@top1` − base, macro | **−3.3** [−4.9, −1.8]: MMLU-Pro −10.9, CLINC150 −10.0, others within ±3.6 | (same) |
+
+The general-track base here is E01b's readout through the released runtime, while ours is evaluated in-process; at
+0.8B both sides were in-process and nothing regressed. Before acting on condition 3, the base is to be evaluated
+in-process on the general track (one cheap run); the two losing tracks are the ones with the longest option lists.
+
+### What scale changed, and what it did not
+
+| held-out track, exact-set % | E02b (0.8B) | E03a (4B) | 4B base, label-free `pick+count` | 4B base, best label-free | B (4B) |
+|---|---|---|---|---|---|
+| SATA | 7.6 | **23.0** | 29.8 | 29.8 | 30.0 |
+| NLU++ | 21.5 | **30.9** | 38.2 | 38.2 | 35.8 |
+| ECtHR | 13.4 | **25.8** | 19.8 | 57.6 (`pick@top1`) | 50.7 |
+| UNFAIR-ToS | 88.3 | **84.6** | 69.6 | 72.8 | 92.4 |
+
+1. **Scale helped a lot zero-shot** (SATA ×3, ECtHR ×2), but the 4B baselines rose as much.
+2. **The trained model is worse than the untrained 4B base's own two-question answer** (Choice ranking plus its native
+   "how many" question) on SATA (−6.8) and NLU++ (−7.3), though better on UNFAIR-ToS (+15) and ECtHR (+6).
+3. **Why: our count head does not use what the 4B base already knows.** Rank correlation of the predicted count with
+   the gold count on SATA: our count head +0.21; the base's own "how many" question +0.71; the sum of its yes/no
+   answers +0.70. On NLU++: ours +0.58, the base's yes/no sum +0.53. The count head is a new layer trained from zero on
+   our families; the base's count knowledge lives in its pretrained candidate head, which the multi question never
+   asks for a count.
+4. **Selection is at the base's level** (ranking with the true count: SATA 57.4 vs 54.4, ECtHR 77.0 vs 77.4, NLU++
+   62.3 vs 62.3), and the model still answers "none" when unsure (mean P(0): ECtHR 0.42, NLU++ 0.39, UNFAIR-ToS 0.66).
+5. **Calibration with labels** helps (SATA 31.2, ECtHR 56.7 with the dev count histogram) but only ties the 4B
+   baselines, which also got much better with labels (per-option yes/no + Platt). With 16 labels it is worse than with
+   none on SATA and NLU++ (13.0, 15.6): the histogram of 16 items is too noisy.
+
+**Reading:** the bottleneck is not model size or data alone but where the count comes from. The pre-registered branch
+("both fail: the count needs a different method") applies; the evidence points to taking the count from the
+pretrained head (which already counts well at 4B) rather than from a new head, and to protecting many-option Choice.

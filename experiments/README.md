@@ -19,6 +19,6 @@ Each `README.md` is written **before** the experiment runs and holds:
 | [E02](E02-count-head/) | Does a trained count head on Decision 2.0 Eos-0.8B beat the best untrained predictor on unseen task families, without losing general quality? | done: G2 failed (count learned the training prior); sigmoid ablation also failed |
 | [E02b](E02b-diverse-data/) | Same recipe on many task families with the answer count decoupled from the source: does G2 pass? | done: G2 failed; selection transfers on SATA (+8.7 with true count), count flipped to "none when unsure"; with dev labels beats B (+3.0, exploratory) |
 | [E01b](E01b-family-check/) | Which base family, Kev or Decision 2.0 (at 4B now, re-checked at 9B before E04)? Its readouts on [benchmark v0](../docs/benchmark.md) are also the model study | done: Decision 2.0 ([D20](../docs/decisions.md)), trainability pending |
-| [E03a](E03a-scale-4b/) | E02b's recipe and data on Nox-4B: does the count transfer at 4B ([D22](../docs/decisions.md))? | pre-registered |
+| [E03a](E03a-scale-4b/) | E02b's recipe and data on Nox-4B: does the count transfer at 4B ([D22](../docs/decisions.md))? | done: G2 and G2-cal failed; zero-shot ×2–3 vs 0.8B but below the untrained 4B base's own "how many" on SATA/NLU++; general −3.3 (pipeline check pending) |
 | E03b | 4B with data v1 (many more task families, open-teacher labels); ships as v0.1 | planned |
 | E04 | 9B with data v2 | planned |
