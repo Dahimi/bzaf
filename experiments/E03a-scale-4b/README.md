@@ -100,9 +100,8 @@ Run 2026-10-09/10 on one H100: 3,453 steps, the E02b mixture unchanged, 6.4k tok
 | set log-loss − B, macro over H | **+0.50** [+0.43, +0.57] | **+0.09** [+0.04, +0.14] |
 | general track `native@top1` − base, macro | **−3.3** [−4.9, −1.8]: MMLU-Pro −10.9, CLINC150 −10.0, others within ±3.6 | (same) |
 
-The general-track base here is E01b's readout through the released runtime, while ours is evaluated in-process; at
-0.8B both sides were in-process and nothing regressed. Before acting on condition 3, the base is to be evaluated
-in-process on the general track (one cheap run); the two losing tracks are the ones with the longest option lists.
+Checked 2026-10-10 with the base evaluated in-process too (`g2-general-inprocess.md`): −3.5 [−5.0, −1.9], MMLU-Pro
+−10.4, CLINC150 −10.5. The regression is real: at 4B, training hurt single-answer questions with many options.
 
 ### What scale changed, and what it did not
 
@@ -130,3 +129,29 @@ in-process on the general track (one cheap run); the two losing tracks are the o
 **Reading:** the bottleneck is not model size or data alone but where the count comes from. The pre-registered branch
 ("both fail: the count needs a different method") applies; the evidence points to taking the count from the
 pretrained head (which already counts well at 4B) rather than from a new head, and to protecting many-option Choice.
+
+### Exploratory analysis after the run (not pre-registered; test-split choices favour every row)
+
+Built from E03a's records and the 4B base's own readout (E01b, `nox-4b-records.tgz`). Exact-set %, test splits.
+
+| ranking | count | labels | SATA | NLU++ | ECtHR | UNFAIR | macro |
+|---|---|---|---|---|---|---|---|
+| ours | ours (`ours@mode`) | none | 23.0 | 30.9 | 25.8 | 84.6 | 41.1 |
+| base Choice | base "how many" (`pick+count`) | none | 29.8 | 38.2 | 19.8 | 69.6 | 39.4 |
+| ours | base "how many" | none | 31.4 | 40.6 | 23.0 | 69.8 | 41.2 |
+| ours | ours × base | none | 25.5 | 37.7 | 28.6 | 77.2 | 42.3 |
+| base Choice | base "how many", reweighted to the dev count histogram | dev split | 35.5 | 41.7 | 42.9 | 87.8 | 52.0 |
+| ours | base "how many", reweighted to the dev count histogram | dev split | 37.6 | 42.0 | 48.4 | 87.8 | 54.0 |
+| ours | same | 64 dev items | 37.8 | 40.6 | 45.2 | 87.5 | 52.8 |
+| B: best per track of `noul_ctx+platt` (one yes/no question per option) and `pick+dev_prior` | | dev split | 30.0 | 35.8 | 50.7 | 92.4 | 52.2 |
+| `pick+dev_prior` alone (one pass) | | dev split | 29.6 | 35.4 | 50.7 | 88.2 | 51.0 |
+| ranking with the true count (ours) | | — | 57.4 | 62.3 | 77.0 | 98.8 | 73.9 |
+
+1. **Without labels, no combination gets near B**: the best is 42.3. The gap sits in the tracks whose answer counts
+   follow a labelling convention (UNFAIR-ToS: 88 % "none"; ECtHR: nearly always one article), which one item does not
+   reveal. On SATA and NLU++, whose answers are facts about the item, the base's own count already beats B without
+   labels (31.4 and 40.6).
+2. **With the dev labels, the untrained 4B base used well matches B** (52.0 vs 52.2): its Choice ranking, its own
+   "how many" answer, and a count prior from the labels. Our training adds about 2 points (54.0) through ranking.
+3. **The count that works is the base's own** ("how many" question), adjusted by a task prior; our trained count head
+   adds nothing on top (ours × base 50.6 with labels, not shown).
