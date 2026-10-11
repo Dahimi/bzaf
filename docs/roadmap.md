@@ -4,6 +4,8 @@
 failed gate is a result, not a delay: it redirects the plan before money or weeks are spent. Experiments live in
 [`experiments/`](../experiments/), one folder each, pre-registered before they run.*
 
+**Status 2026-10-11: paused after E03a ([D23](decisions.md)).** The phases below are kept as they were; the next effort is a separate project (query-focused snippet extraction).
+
 | Phase | Work | Model | Gate | Budget envelope |
 |---|---|---|---|---|
 | 1 ✅ | [E01](../experiments/E01-readout-baselines/) readout baselines | Kev 0.8B/4B, Imajev 4B | G1 passed: the count is the bottleneck | ~$5 (spent) |

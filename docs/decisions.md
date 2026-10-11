@@ -174,3 +174,17 @@ and data, unchanged, on Nox-4B. G2's bar is unchanged (and higher at 4B, since t
 calibrated gate, pre-registered with E03a, adds the comparison with the same labelled examples the baselines use.
 The extra 0.8B runs (count head reading option scores, sigmoid on E02b data, run C) are dropped. Money comes from the
 4B phase (~$60); data v1 (many more task families, open-teacher labels) is built in parallel for E03b.
+
+## D23 — Multi-answer project paused; next: query-focused snippet extraction (2026-10-11)
+After E03a the multi-answer work is paused (not abandoned). What stands: the count, not the ranking, is what existing
+decision models get wrong (E01); a trained count reproduces the count habits of its training families at 0.8B and 4B
+(E02–E03a); diverse data makes option selection transfer (E02b); the part that cannot transfer zero-shot is each
+task's labelling convention ("mostly none", "exactly one"), which an item does not contain. With a task's labels, the
+untrained 4B base's own count plus a task prior matches the label-using baselines (52.0 vs 52.2) and our ranking adds
+~2 points; without labels nothing reaches them; training at 4B also cost 3.5 points on many-option single-answer
+questions. The remaining upside (count from the pretrained head, protecting the base, ranking) is a modest model, and
+a calibrated model weakens the zero-shot story, so the effort moves to the use case that started this work:
+given a document and a query, return the relevant snippets. There the labelling rule is ours (one convention for all
+data), so generalising means new documents and queries rather than new conventions. Benchmark v0, the trainer and the
+findings stay in this repository; resuming would start from E03a's notes (count from the pretrained head, general
+regression to fix).
