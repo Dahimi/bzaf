@@ -14,6 +14,8 @@ Per item, four variants (all in the same request where possible; the questions a
             score; the answer's probabilities are recorded per option.
   multi     our multi-answer type (trained models only): option logits and count probabilities, recorded as
             multi_z and multi_count.
+  write     the model writes the letters of every option that applies (local LLMs only, bzaf.llm; a few generated
+            tokens, not one pass): recorded as write (option indices; missing if the text did not parse) and write_raw.
 """
 from __future__ import annotations
 
@@ -27,7 +29,7 @@ from .client import DecisionClient
 from .schema import Item
 
 VARIANTS = ("noul", "noul_ctx", "pick", "count")
-ALL_VARIANTS = VARIANTS + ("set", "native", "multi")
+ALL_VARIANTS = VARIANTS + ("set", "native", "multi", "write")
 
 
 def _listing(options: list[str], descriptions: list[str] | None = None) -> str:
@@ -71,6 +73,8 @@ def build_questions(item: Item, variants: Iterable[str] = VARIANTS) -> dict[str,
         out["set"] = {"type": "set", "instructions": f"{q}\nSelect every option that applies.", "criteria": dict(zip(opts, ds))}
     if "multi" in variants:
         out["multi"] = {"type": "multi", "instructions": q, "criteria": dict(zip(opts, ds))}
+    if "write" in variants:
+        out["write"] = {"type": "write", "instructions": f"{q}\nSelect every option that applies.", "criteria": dict(zip(opts, ds))}
     if "native" in variants:
         qtype = item.meta.get("qtype", "choice")
         if qtype == "noul":
@@ -107,6 +111,10 @@ def parse_answers(item: Item, answers: dict, sets: dict | None = None, threshold
             p = a["probabilities"]
             keys = [str(j) for j in range(k)] if qtype == "score" and str(0) in p else item.options
             rec["native"] = [float(p[key]) for key in keys]
+    if "write" in answers:
+        rec["write_raw"] = answers["write"]["text"]
+        if answers["write"]["indices"] is not None:
+            rec["write"] = list(answers["write"]["indices"])
     if "multi" in answers:
         rec["multi_z"] = [float(x) for x in answers["multi"]["logits"]]
         rec["multi_count"] = [float(x) for x in answers["multi"]["count"]]

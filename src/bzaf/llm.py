@@ -7,7 +7,8 @@ option is the softmax of the next-token logits over the option letters (A-Z, the
 No temperature: these readouts are scored as they come out of the model.
 
 The client answers like a decision server (`DecisionClient.decide`), so `bzaf readout`, `bzaf bench` and all the
-predictors run unchanged.
+predictors run unchanged. One extra question type, `write`, is not a readout: the model writes the letters of every
+option that applies (greedy, thinking off), a reference for what the model knows when it may answer in a few tokens.
 
 Speed: questions about one item share most of their prompt (the per-option yes/no questions all repeat the evidence and
 the option listing), so each group of questions runs as one pass over the shared prefix plus short continuations from
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import string
 from collections import defaultdict
 from typing import Any
@@ -29,6 +31,12 @@ SYSTEM = ("Apply the supplied criterion to the supplied evidence. Choose exactly
           "Respond with only its uppercase letter, with no explanation or reasoning.")
 SYSTEM_WIDE = ("Apply the supplied criterion to the supplied evidence. Choose exactly one listed option. "
                "Respond with only its letter, exactly as listed (upper or lower case), with no explanation or reasoning.")
+WRITE = ("Apply the supplied criterion to the supplied evidence. Choose every listed option that applies; there may be "
+         "none, one or several. Respond with only their uppercase letters separated by commas, or NONE if no option "
+         "applies, with no explanation or reasoning.")
+WRITE_WIDE = ("Apply the supplied criterion to the supplied evidence. Choose every listed option that applies; there may "
+              "be none, one or several. Respond with only their letters exactly as listed (upper or lower case), "
+              "separated by commas, or NONE if no option applies, with no explanation or reasoning.")
 MIN_SHARED = 16   # tokens: a shorter common prefix is not worth a separate pass
 
 
@@ -41,7 +49,7 @@ def options_of(q: dict) -> tuple[list[str], list[str]]:
         return keys, [f"{k}: {crit[k]}" if crit.get(k) else k for k in keys]
     if q["type"] == "score":
         return [str(j) for j in range(len(crit))], [f"{j}: {t}" for j, t in enumerate(crit)]
-    if q["type"] == "choice":
+    if q["type"] in ("choice", "write"):
         return list(crit), [f"{k}: {d}" if d else k for k, d in crit.items()]
     raise ValueError(f"question type {q['type']!r} is not answered by the letter readout")
 
@@ -52,8 +60,25 @@ def messages(state: Any, q: dict) -> list[dict]:
         raise ValueError(f"{len(texts)} options; the letter readout supports at most {len(LETTERS)}")
     user = {"evidence": state, "criterion": q["instructions"],
             "options": [{"letter": L, "description": t} for L, t in zip(LETTERS, texts)]}
-    return [{"role": "system", "content": SYSTEM if len(texts) <= 26 else SYSTEM_WIDE},
+    narrow, wide = (WRITE, WRITE_WIDE) if q["type"] == "write" else (SYSTEM, SYSTEM_WIDE)
+    return [{"role": "system", "content": narrow if len(texts) <= 26 else wide},
             {"role": "user", "content": json.dumps(user, ensure_ascii=False)}]
+
+
+def parse_written(text: str, k: int) -> list[int] | None:
+    """Option indices from a written answer ("B, D", "NONE"); None if it is anything else."""
+    t = text.strip().rstrip(".").strip()
+    if t.upper() == "NONE":
+        return []
+    out: set[int] = set()
+    for part in re.split(r"[,\s]+", t):
+        if not part:
+            continue
+        j = LETTERS.find(part.upper() if k <= 26 else part) if len(part) == 1 else -1
+        if not 0 <= j < k:
+            return None
+        out.add(j)
+    return sorted(out) if out else None
 
 
 def max_answer_diff(a: dict, b: dict) -> float:
@@ -84,6 +109,8 @@ class LLMClient:
             raise ValueError("every option letter must be one token for this readout")
         self.letter_ids = torch.tensor([i[0] for i in ids], device=self.device)
         self.mass: dict[str, list[float]] = defaultdict(list)   # probability on the listed letters, per question group
+        self.written: list[bool] = []                            # whether each written answer parsed
+        self.pad_id = getattr(tokenizer, "pad_token_id", None) or getattr(tokenizer, "eos_token_id", None) or 0
 
     @classmethod
     def load(cls, model_id: str, name: str | None = None, revision: str | None = None, device: str = "cuda",
@@ -106,15 +133,24 @@ class LLMClient:
 
     def decide(self, state: Any, questions: dict[str, dict]) -> dict:
         seqs = {key: self.prompt_ids(state, q) for key, q in questions.items()}
+        answers = {}
+        for key, q in questions.items():
+            if q["type"] == "write":
+                k = len(q["criteria"])
+                text = self._generate(seqs[key], max_new_tokens=min(2 * k + 8, 128))
+                answers[key] = {"text": text, "indices": parse_written(text, k)}
+                self.written.append(answers[key]["indices"] is not None)
         groups: dict[str, list[str]] = defaultdict(list)
-        for key in questions:
-            groups[_group(key)].append(key)
+        for key, q in questions.items():
+            if q["type"] != "write":
+                groups[_group(key)].append(key)
         logits: dict[str, torch.Tensor] = {}
         for keys in groups.values():
             for key, row in zip(keys, self._last_logits([seqs[k] for k in keys])):
                 logits[key] = row
-        answers = {}
         for key, q in questions.items():
+            if q["type"] == "write":
+                continue
             names, _ = options_of(q)
             row = logits[key].float()
             letters = row[self.letter_ids[: len(names)]]
@@ -125,10 +161,22 @@ class LLMClient:
         return {"answers": answers}
 
     def mass_summary(self) -> dict[str, dict[str, float]]:
-        """Mean and lowest probability the model put on the listed letters (the rest went to other tokens)."""
-        return {g: {"n": len(v), "mean": sum(v) / len(v), "min": min(v)} for g, v in sorted(self.mass.items()) if v}
+        """Mean and lowest probability the model put on the listed letters (the rest went to other tokens), and the
+        share of written answers that parsed."""
+        out = {g: {"n": len(v), "mean": sum(v) / len(v), "min": min(v)} for g, v in sorted(self.mass.items()) if v}
+        if self.written:
+            out["write"] = {"n": len(self.written), "parsed": sum(self.written) / len(self.written)}
+        return out
 
     # --- forward passes -----------------------------------------------------------------------------------------
+
+    @torch.no_grad()
+    def _generate(self, ids: list[int], max_new_tokens: int) -> str:
+        """Greedy continuation of one prompt, up to the model's end-of-turn token."""
+        x = torch.tensor([ids], device=self.device)
+        out = self.lm.generate(input_ids=x, attention_mask=torch.ones_like(x), max_new_tokens=max_new_tokens,
+                               do_sample=False, temperature=None, top_p=None, top_k=None, pad_token_id=self.pad_id)
+        return self.tok.decode(out[0, len(ids):].tolist(), skip_special_tokens=True)
 
     @torch.no_grad()
     def _last_logits(self, seqs: list[list[int]]) -> list[torch.Tensor]:

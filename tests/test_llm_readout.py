@@ -5,16 +5,20 @@ import pytest
 torch = pytest.importorskip("torch")
 transformers = pytest.importorskip("transformers")
 
-from bzaf.llm import LETTERS, SYSTEM_WIDE, LLMClient, max_answer_diff, messages  # noqa: E402
+from bzaf.llm import LETTERS, SYSTEM_WIDE, WRITE, LLMClient, max_answer_diff, messages, parse_written  # noqa: E402
 from bzaf.readout import build_questions, parse_answers  # noqa: E402
 from bzaf.schema import Item  # noqa: E402
 
 
 class ByteTokenizer:
     """One token per UTF-8 byte; a plain chat template ending where the answer letter goes."""
+    pad_token_id = eos_token_id = None
 
     def encode(self, text, add_special_tokens=False):
         return list(text.encode("utf-8"))
+
+    def decode(self, ids, skip_special_tokens=True):
+        return bytes(i for i in ids if i < 256).decode("utf-8", errors="replace")
 
     def apply_chat_template(self, msgs, add_generation_prompt=True, tokenize=False, enable_thinking=False):
         assert not tokenize and add_generation_prompt and not enable_thinking
@@ -72,3 +76,22 @@ def test_wide_questions_use_lowercase_letters():
     assert msgs[0]["content"] == SYSTEM_WIDE and '"letter": "d"' in msgs[1]["content"]
     with pytest.raises(ValueError):
         messages("state", build_questions(item(len(LETTERS) + 1), ["pick"])["pick"])
+
+
+def test_written_answers_parse():
+    assert parse_written(" B, D\n", 5) == [1, 3] and parse_written("a,c.", 5) == [0, 2] and parse_written("NONE", 5) == []
+    assert parse_written("None.", 5) == [] and parse_written("D, B, D", 5) == [1, 3]
+    assert parse_written("F", 5) is None and parse_written("B and D", 5) is None and parse_written("", 5) is None
+    assert parse_written("A, a", 30) == [0, 26] and parse_written("d", 30) == [29] and parse_written("e", 30) is None
+
+
+def test_write_question_runs_and_parses_into_the_record():
+    it = item()
+    qs = build_questions(it, ["pick", "write"])
+    assert messages(it.state, qs["write"])[0]["content"] == WRITE
+    c = client()
+    answers = c.decide(it.state, qs)["answers"]
+    rec = parse_answers(it, answers)
+    assert isinstance(rec["write_raw"], str) and len(rec["pick"]) == 5
+    assert ("write" in rec) == (answers["write"]["indices"] is not None)   # a random model writes junk: usually missing
+    assert c.mass_summary()["write"]["n"] == 1

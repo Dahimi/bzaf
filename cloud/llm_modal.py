@@ -2,10 +2,9 @@
 uploaded; the bar-wording probe is built on the machine from the cached source files; weights are cached on the
 bzaf-model-cache volume and records written to the bzaf-runs volume (resumable: a rerun skips finished items).
 
-    # 1. smoke run: 10 items per track, shared-prefix self-check, letter-mass check (~10 min, < $1)
-    modal run cloud/llm_modal.py --model Qwen/Qwen3.5-4B --name e04a-smoke --limit 10
-    # 2. full runs (--detach: survives a closed terminal)
-    modal run --detach cloud/llm_modal.py --model Qwen/Qwen3.5-4B --name e04a-qwen3.5-4b
+    # 1. smoke run: 10 items per track and 10 probe pairs; shared-prefix self-check, letter mass, written answers parsed
+    modal run cloud/llm_modal.py --model Qwen/Qwen3.6-27B --name e04a-smoke-27b --limit 10
+    # 2. the full run (--detach: survives a closed terminal; follow it with `modal app logs bzaf-llm`)
     modal run --detach cloud/llm_modal.py --model Qwen/Qwen3.6-27B --name e04a-qwen3.6-27b
     # 3. fetch, then score as in experiments/E04a-llm-count/README.md
     modal volume get bzaf-runs e04a-qwen3.6-27b runs/
@@ -39,7 +38,8 @@ app = modal.App("bzaf-llm")
 
 
 @app.function(image=image, gpu=GPU, volumes={"/cache": cache, "/runs": runs}, cpu=8, memory=65536, timeout=24 * 3600)
-def readout(model: str, name: str, tracks: str = TRACKS, limit: int = 0, probe: bool = True, revision: str = "") -> dict:
+def readout(model: str, name: str, tracks: str = TRACKS, limit: int = 0, probe: bool = True, write: bool = True,
+            revision: str = "") -> dict:
     import hashlib
     import json
     from pathlib import Path
@@ -73,8 +73,9 @@ def readout(model: str, name: str, tracks: str = TRACKS, limit: int = 0, probe: 
         info["self_check_max_diff"] = diff
         print(f"self-check on {first.id} ({len(qs)} questions): shared prefix vs full passes, max |diff| {diff:.2e}", flush=True)
 
+        extra = ("write",) if write else ()   # the written answer: a reference, a few generated tokens per item
         for t in tracks.split(","):   # one track at a time, committed after each: an interruption loses little
-            bench.readout(client, "/root/bench-v0", out / "bench", tracks=[t], limit=limit or None)
+            bench.readout(client, "/root/bench-v0", out / "bench", tracks=[t], limit=limit or None, extra_variants=extra)
             print("letter mass so far:", json.dumps(client.mass_summary()), flush=True)
             runs.commit()
         if probe:
@@ -84,7 +85,8 @@ def readout(model: str, name: str, tracks: str = TRACKS, limit: int = 0, probe: 
                 write_items(items, path)
                 info[f"bar_{src}_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
                 print(f"bar_{src}: {len(items)} items, sha256 {info[f'bar_{src}_sha256']}", flush=True)
-                run_readout(client, items[: limit * 2 or None], out / "bar" / f"bar_{src}.jsonl", ["noul_ctx", "pick", "count"])
+                run_readout(client, items[: limit * 2 or None], out / "bar" / f"bar_{src}.jsonl",
+                            ["noul_ctx", "pick", "count", *extra])
                 runs.commit()
         info["letter_mass"] = client.mass_summary()
         (out / "info.json").write_text(json.dumps(info, indent=2) + "\n")
@@ -100,6 +102,6 @@ def readout(model: str, name: str, tracks: str = TRACKS, limit: int = 0, probe: 
 
 
 @app.local_entrypoint()
-def main(model: str = "Qwen/Qwen3.5-4B", name: str = "e04a-smoke", tracks: str = TRACKS, limit: int = 0, probe: bool = True,
-         revision: str = ""):
-    print(readout.remote(model, name, tracks, limit, probe, revision))
+def main(model: str = "Qwen/Qwen3.6-27B", name: str = "e04a-smoke-27b", tracks: str = TRACKS, limit: int = 0,
+         probe: bool = True, write: bool = True, revision: str = ""):
+    print(readout.remote(model, name, tracks, limit, probe, write, revision))

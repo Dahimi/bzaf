@@ -62,6 +62,7 @@ def main(argv: list[str] | None = None) -> int:
     br.add_argument("--bench", default="data/bench-v0")
     br.add_argument("--out", default=None, help="default runs/bench-v0/<model>")
     br.add_argument("--with-set", action="store_true", help="also ask the native `set` question type (Vela 2.0)")
+    br.add_argument("--with-write", action="store_true", help="also let the model write its answer letters (--llm only)")
     br.add_argument("--tracks", default=None, help="comma list of tracks (and/or `order`); default all")
     br.add_argument("--max-questions", type=int, default=64)
     br.add_argument("--concurrency", type=int, default=8)
@@ -100,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
         elif a.bench_cmd == "readout":
             client = _client(a)
             bench.readout(client, a.bench, a.out or f"runs/bench-v0/{client.model}", a.with_set, tracks, a.max_questions,
-                          a.concurrency, a.limit)
+                          a.concurrency, a.limit, extra_variants=("write",) if a.with_write else ())
         elif a.bench_cmd == "compare":
             res = bench.compare(a.run_a, a.run_b, a.predictor, a.metric, predictor_b=a.predictor_b,
                                 tracks=a.only.split(",") if a.only else None)

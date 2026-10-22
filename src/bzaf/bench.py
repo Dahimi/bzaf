@@ -117,9 +117,11 @@ def prepare(out: str | Path = f"data/bench-{VERSION}", tracks: list[str] | None 
     return manifest
 
 
-def readout_plan(bench: Path, with_set: bool = False, tracks: list[str] | None = None) -> list[tuple[Path, str, list[str]]]:
-    """(items file, output stem, variants) for every part of the benchmark."""
-    extra = ["set"] if with_set else []
+def readout_plan(bench: Path, with_set: bool = False, tracks: list[str] | None = None,
+                 extra_variants: tuple[str, ...] = ()) -> list[tuple[Path, str, list[str]]]:
+    """(items file, output stem, variants) for every part of the benchmark. `extra_variants` (e.g. write) are asked on
+    the multi-answer tracks, like `set`."""
+    extra = (["set"] if with_set else []) + list(extra_variants)
     plan = []
     for t in TRACKS:
         if tracks and t.name not in tracks:
@@ -138,11 +140,12 @@ def readout_plan(bench: Path, with_set: bool = False, tracks: list[str] | None =
 
 
 def readout(client, bench: str | Path, out: str | Path, with_set: bool = False, tracks: list[str] | None = None,
-            max_questions: int = 64, concurrency: int = 1, limit: int | None = None, log=print) -> None:
+            max_questions: int = 64, concurrency: int = 1, limit: int | None = None, log=print,
+            extra_variants: tuple[str, ...] = ()) -> None:
     from .readout import run_readout
 
     bench, out = Path(bench), Path(out)
-    for items_file, stem, variants in readout_plan(bench, with_set, tracks):
+    for items_file, stem, variants in readout_plan(bench, with_set, tracks, extra_variants):
         if not items_file.exists():
             log(f"skip {stem}: {items_file} missing (run `bzaf bench prepare`)")
             continue

@@ -182,6 +182,15 @@ class OursCalibrated(Predictor):
         return Prediction(set(dist.mode()), dist)
 
 
+class Written(Predictor):
+    """The set the model wrote out (variant `write`, local LLMs only). No distribution; an answer that did not parse
+    counts as wrong."""
+    name, needs = "write", ("write",)
+
+    def predict(self, rec):
+        return Prediction(set(rec["write"]))
+
+
 class ChoiceTop1(Predictor):
     """Today's single-answer Choice: always exactly one option."""
     name, needs = "pick@top1", ("pick",)
@@ -287,4 +296,5 @@ def default_predictors() -> list[Predictor]:
         Independent("set", calibrate=True),
         OracleCount("set"),
         ScoresPlusDevPrior("set"),
+        Written(),
     ]
