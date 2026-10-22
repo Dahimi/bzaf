@@ -74,9 +74,12 @@ def readout(model: str, name: str, tracks: str = TRACKS, limit: int = 0, probe: 
         print(f"self-check on {first.id} ({len(qs)} questions): shared prefix vs full passes, max |diff| {diff:.2e}", flush=True)
 
         extra = ("write",) if write else ()   # the written answer: a reference, a few generated tokens per item
+        info["letter_mass_by_track"] = {}
         for t in tracks.split(","):   # one track at a time, committed after each: an interruption loses little
+            before = client.mass_counts()
             bench.readout(client, "/root/bench-v0", out / "bench", tracks=[t], limit=limit or None, extra_variants=extra)
-            print("letter mass so far:", json.dumps(client.mass_summary()), flush=True)
+            info["letter_mass_by_track"][t] = client.mass_summary(since=before)
+            print(f"letter mass on {t}:", json.dumps(info["letter_mass_by_track"][t]), flush=True)
             runs.commit()
         if probe:
             for src in ("wands", "esci"):
@@ -89,6 +92,7 @@ def readout(model: str, name: str, tracks: str = TRACKS, limit: int = 0, probe: 
                             ["noul_ctx", "pick", "count", *extra])
                 runs.commit()
         info["letter_mass"] = client.mass_summary()
+        info["low_mass_examples"] = client.low_mass
         (out / "info.json").write_text(json.dumps(info, indent=2) + "\n")
         print(json.dumps(info["letter_mass"], indent=2), flush=True)
     except Exception as e:  # re-raised as plain text: the local side has no torch to unpickle torch exceptions

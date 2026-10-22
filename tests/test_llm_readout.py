@@ -68,6 +68,9 @@ def test_answers_parse_like_a_server():
     assert abs(sum(rec["pick"]) - 1) < 1e-5 and abs(sum(rec["count"]) - 1) < 1e-5
     assert all(0 <= p <= 1 for p in rec["noul_ctx"])
     assert set(c.mass_summary()) == {"noulctx", "pick", "count"}
+    before = c.mass_counts()
+    c.decide(it.state, build_questions(it, ["pick"]))
+    assert c.mass_summary(since=before) == {"pick": c.mass_summary(since=before)["pick"]} and c.mass_summary()["pick"]["n"] == 2
 
 
 def test_wide_questions_use_lowercase_letters():

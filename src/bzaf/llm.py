@@ -110,6 +110,7 @@ class LLMClient:
         self.letter_ids = torch.tensor([i[0] for i in ids], device=self.device)
         self.mass: dict[str, list[float]] = defaultdict(list)   # probability on the listed letters, per question group
         self.written: list[bool] = []                            # whether each written answer parsed
+        self.low_mass: list[dict] = []                           # examples of questions answered mostly off the letters
         self.pad_id = getattr(tokenizer, "pad_token_id", None) or getattr(tokenizer, "eos_token_id", None) or 0
 
     @classmethod
@@ -155,18 +156,28 @@ class LLMClient:
             row = logits[key].float()
             letters = row[self.letter_ids[: len(names)]]
             label = key if _group(key) == "rest" else _group(key)
-            self.mass[label].append(float((torch.logsumexp(letters, 0) - torch.logsumexp(row, 0)).exp()))
+            mass = float((torch.logsumexp(letters, 0) - torch.logsumexp(row, 0)).exp())
+            self.mass[label].append(mass)
+            if mass < 0.5 and len(self.low_mass) < 100:   # what the model wanted to say instead of a letter
+                self.low_mass.append({"group": label, "mass": round(mass, 3), "top_token": self.tok.decode([int(row.argmax())])})
             p = torch.softmax(letters, 0).tolist()
             answers[key] = {"noul": p[0]} if q["type"] == "noul" else {"probabilities": dict(zip(names, p))}
         return {"answers": answers}
 
-    def mass_summary(self) -> dict[str, dict[str, float]]:
+    def mass_summary(self, since: dict[str, int] | None = None) -> dict[str, dict[str, float]]:
         """Mean and lowest probability the model put on the listed letters (the rest went to other tokens), and the
-        share of written answers that parsed."""
-        out = {g: {"n": len(v), "mean": sum(v) / len(v), "min": min(v)} for g, v in sorted(self.mass.items()) if v}
+        share of written answers that parsed. `since` (from `mass_counts()`): only the questions asked after it."""
+        since = since or {}
+        out = {g: {"n": len(v), "mean": sum(v) / len(v), "min": min(v)}
+               for g, v in ((g, v[since.get(g, 0):]) for g, v in sorted(self.mass.items())) if v}
+        if since:
+            return out
         if self.written:
             out["write"] = {"n": len(self.written), "parsed": sum(self.written) / len(self.written)}
         return out
+
+    def mass_counts(self) -> dict[str, int]:
+        return {g: len(v) for g, v in self.mass.items()}
 
     # --- forward passes -----------------------------------------------------------------------------------------
 
