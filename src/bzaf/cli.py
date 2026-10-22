@@ -8,6 +8,21 @@ from .data import LOADERS
 from .schema import read_items, write_items
 
 
+def _client(a):
+    """A decision server (--base-url) or a local LLM read out by its answer letters (--llm, bzaf.llm)."""
+    if (a.base_url is None) == (a.llm is None):
+        raise SystemExit("give exactly one of --base-url and --llm")
+    if a.llm:
+        from .llm import LLMClient
+
+        return LLMClient.load(a.llm, a.model)
+    if not a.model:
+        raise SystemExit("--model is required with --base-url")
+    from .client import DecisionClient
+
+    return DecisionClient(a.base_url, a.model, timeout=a.timeout)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="bzaf")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -20,8 +35,9 @@ def main(argv: list[str] | None = None) -> int:
 
     r = sub.add_parser("readout", help="ask a decision server about every item and save raw probabilities")
     r.add_argument("--items", required=True)
-    r.add_argument("--base-url", required=True, help="e.g. http://localhost:8000 (a TypeSafe-compatible server)")
-    r.add_argument("--model", required=True, help="name recorded in the output, and sent as the request's model")
+    r.add_argument("--base-url", default=None, help="e.g. http://localhost:8000 (a TypeSafe-compatible server)")
+    r.add_argument("--llm", default=None, help="instead of a server: a local instruction-tuned LLM (Hugging Face id), letter readout")
+    r.add_argument("--model", default=None, help="name recorded in the output, and sent as the request's model (default: from --llm)")
     r.add_argument("--out", required=True)
     r.add_argument("--variants", default="noul,noul_ctx,pick,count", help="comma list of noul,noul_ctx,pick,count,set")
     r.add_argument("--max-questions", type=int, default=64, help="questions per request (chunked above this)")
@@ -40,8 +56,9 @@ def main(argv: list[str] | None = None) -> int:
     bp.add_argument("--out", default="data/bench-v0")
     bp.add_argument("--tracks", default=None, help="comma list (default: all)")
     br = bsub.add_parser("readout", help="read one model out on every track (resumable)")
-    br.add_argument("--base-url", required=True)
-    br.add_argument("--model", required=True)
+    br.add_argument("--base-url", default=None)
+    br.add_argument("--llm", default=None, help="instead of a server: a local instruction-tuned LLM (Hugging Face id), letter readout")
+    br.add_argument("--model", default=None, help="default: from --llm")
     br.add_argument("--bench", default="data/bench-v0")
     br.add_argument("--out", default=None, help="default runs/bench-v0/<model>")
     br.add_argument("--with-set", action="store_true", help="also ask the native `set` question type (Vela 2.0)")
@@ -70,11 +87,10 @@ def main(argv: list[str] | None = None) -> int:
         n = write_items(items, out)
         print(f"{n} items -> {out}")
     elif a.cmd == "readout":
-        from .client import DecisionClient
         from .readout import run_readout
 
         items = list(read_items(a.items))[: a.limit]
-        run_readout(DecisionClient(a.base_url, a.model, timeout=a.timeout), items, a.out, a.variants.split(","), a.max_questions, a.concurrency)
+        run_readout(_client(a), items, a.out, a.variants.split(","), a.max_questions, a.concurrency)
     elif a.cmd == "bench":
         from . import bench
 
@@ -82,10 +98,9 @@ def main(argv: list[str] | None = None) -> int:
         if a.bench_cmd == "prepare":
             bench.prepare(a.out, tracks)
         elif a.bench_cmd == "readout":
-            from .client import DecisionClient
-
-            bench.readout(DecisionClient(a.base_url, a.model, timeout=a.timeout), a.bench, a.out or f"runs/bench-v0/{a.model}",
-                          a.with_set, tracks, a.max_questions, a.concurrency, a.limit)
+            client = _client(a)
+            bench.readout(client, a.bench, a.out or f"runs/bench-v0/{client.model}", a.with_set, tracks, a.max_questions,
+                          a.concurrency, a.limit)
         elif a.bench_cmd == "compare":
             res = bench.compare(a.run_a, a.run_b, a.predictor, a.metric, predictor_b=a.predictor_b,
                                 tracks=a.only.split(",") if a.only else None)

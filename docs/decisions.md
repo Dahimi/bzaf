@@ -188,3 +188,19 @@ given a document and a query, return the relevant snippets. There the labelling 
 data), so generalising means new documents and queries rather than new conventions. Benchmark v0, the trainer and the
 findings stay in this repository; resuming would start from E03a's notes (count from the pretrained head, general
 regression to fix).
+
+## D24 — One zero-training experiment on the count: a bigger LLM, and the bar stated in the question (2026-10-22)
+bzaf stays paused for training; one cheap readout experiment runs first ([E04a](../experiments/E04a-llm-count/)).
+Reasons:
+- **The count we lack already exists untrained.** At 4B the base model's own "how many" answer beat our trained
+  count head (E03a).
+- **Size matters for one-pass decisions.** Geuter et al. 2026 (arXiv 2610.17205) find instruction-tuned LLMs reach
+  Jev's level with a plain letter readout, no training, from ~27B. Their RL-like expected-utility objective adds
+  nothing over cross-entropy, which supports not trying RL (PPO/DPO) here: our labels are known and our answer space
+  small, so the RL objective can be computed exactly.
+- **The convention problem is restated as a question we can test.** A zero-shot model cannot infer an unstated bar.
+  It can follow a stated one if it reads the wording, which needs no few-shot examples from whoever tests it.
+
+E04a measures both: a 27B vs a 4B LLM, read out letter by letter with no training, on the held-out tracks; and a
+probe where only the strictness of the wording changes. Its decision rule says whether to write up a zero-training
+recipe and close, or to test stated bars on fresh tasks. ~$10.

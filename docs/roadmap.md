@@ -5,6 +5,7 @@ failed gate is a result, not a delay: it redirects the plan before money or week
 [`experiments/`](../experiments/), one folder each, pre-registered before they run.*
 
 **Status 2026-10-11: paused after E03a ([D23](decisions.md)).** The phases below are kept as they were; the next effort is a separate project (query-focused snippet extraction).
+2026-10-22: one zero-training readout experiment, [E04a](../experiments/E04a-llm-count/) ([D24](decisions.md)): does a bigger LLM count well untrained, and does its count follow the wording?
 
 | Phase | Work | Model | Gate | Budget envelope |
 |---|---|---|---|---|
