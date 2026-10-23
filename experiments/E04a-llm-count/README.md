@@ -138,5 +138,90 @@ Not gates, recorded: the letter mass per question type (a type with mean below 0
 questioned) and the self-check difference. If the 27B's letter mass or self-check fails, the run is fixed and
 repeated before anything is concluded.
 
-## Results
-*(to fill after the runs)*
+## Results (Qwen3.6-27B, run 2026-10-22/23; the optional 4B run was not made, so C1 is open)
+
+Files in [results/](results/): `qwen3.6-27b.md` (full report), `c2-*.md`, `written-vs-readouts.md`, `vs-nox-4b.md`,
+`counts.md`, `qwen3.6-27b-info.json`.
+
+**Run checks.**
+- All weights loaded (26.9B, bf16).
+- Shared-prefix self-check 0.031 (bf16 rounding; 1e-7 on CPU in fp32).
+- Written answers 100 % parsed; probe files identical to the checksums above.
+- Letter mass ≥ 0.99 on every track and question type except UNFAIR-ToS yes/no (mean 0.954; 63 questions below
+  0.5). There the model's top token was " B", the letter with a leading space, which this readout did not count, so
+  those answers lean towards "yes". This affects only the yes/no predictors on UNFAIR-ToS, which is not gated.
+  The readout now counts both forms (commit after this run).
+
+Exact-set %, test split. B = the better on test of `noul_ctx+platt` and `pick+dev_prior` (dev labels).
+
+| track | asked count (`pick+count`) | summed yes/no (`noul_ctx@0.5`) | written (`write`) | B, 27B | yes/no ranking + true count | Nox-4B, best label-free* | B, Nox-4B* |
+|---|---|---|---|---|---|---|---|
+| SATA | 8.7 | 29.4 | **34.9** | 33.0 | 59.9 | 29.8 | 30.0 |
+| NLU++ | 30.7 | 42.7 | **43.9** | 41.5 | 71.0 | 38.2 | 35.8 |
+| ECtHR | 57.6 | 62.7 | 55.8 | **66.8** | 91.7 | 57.6 | 50.7 |
+| UNFAIR-ToS | 73.7 | 70.8 | 69.1 | **92.8** | 99.3 | 72.8 | 92.4 |
+| macro (H) | 42.7 | 51.4 | 50.9 | 58.5 | 80.5 | 49.6 | 52.2 |
+| synthetic | 77.1 | 93.2 | 92.7 | 97.6 | 100.0 | – | – |
+
+\* E03a's table: Nox-4B's best label-free predictor chosen per track on test, and its B. A different readout (its
+own trained head); reference only.
+
+Counts on the test split (from `counts.md`), mean predicted vs gold:
+- SATA: asked 2.50, summed 3.18, written 3.02, gold 3.60. All under-count. The asked count is exactly right on 15 %
+  of items, the summed count on 37 %.
+- NLU++: asked 1.34, summed 2.41, written 1.78, gold 1.93.
+- ECtHR: asked 1.23, summed 1.52, written 1.52, gold 1.09 (exactly right 61–65 %; Nox-4B 23–39 %).
+- UNFAIR-ToS: 0.42–0.46 against a gold mean of 0.13.
+
+### Criteria
+- **C1 (size): not run.** Against Nox-4B (different readout), the label-free macro rises from 49.6 to 51.4:
+  - NLU++ +4.5 and ECtHR +5.1;
+  - SATA ties (29.4 vs 29.8) and UNFAIR-ToS −2.0.
+
+  This compares one fixed 27B predictor with Nox-4B's best per track, chosen on test.
+- **C2 (without labels vs with): failed.** Summed yes/no − B:
+  - SATA −3.6 [−5.0, −2.1]; NLU++ +1.2 [−2.6, +5.0];
+  - not gated: ECtHR −4.2 [−10.6, +2.3], UNFAIR-ToS −21.9 [−25.8, −18.0].
+
+  The asked count is below B everywhere (SATA −24.3).
+- **C3 (wording): failed.** Pairs whose count rose by ≥ 1 for the loose wording (asked / summed / written):
+  WANDS 79 / 87 / 78 %, ESCI 61 / 63 / 53 %.
+  - The count moves the right way on average, but only about halfway. Summed: WANDS 0.92 → 3.78 (gold 1.03 → 6.64);
+    ESCI 2.22 → 3.86 (gold 3.93 → 7.27).
+  - The model reads "at least partly relevant" and "acceptable" much more narrowly than the annotators did.
+- **Reference, written answer:** written − the better one-pass readout:
+  - SATA +5.5 [+3.6, +7.7], which meets the pre-registered ≥ +5;
+  - NLU++ +1.2 [−2.6, +5.2]; ECtHR −6.9; UNFAIR-ToS −4.6; synthetic −0.5; macro −1.1 [−2.6, +0.5].
+
+### Predictions, checked
+1. **Wrong.** The asked count did not improve SATA; it collapsed (8.7) by under-counting.
+2. **Half wrong.** ECtHR improved a lot without labels (62.7, within 4.2 of B; Nox-4B's B was 50.7). UNFAIR-ToS did
+   not.
+3. **Right, strongly.** Summing yes/no beats asking "how many" on SATA (+20.7), NLU++ (+12.0), ECtHR (+5.1) and
+   synthetic (+16.1). On UNFAIR-ToS it is −2.9, where its yes/no answers lean towards "yes", see above.
+4. **Right.** The count moves the right way, but only partly.
+5. **Mostly right.** The written list is equal or worse except on SATA (+5.5).
+
+### Reading
+1. **The untrained 27B, asked option by option, is close to the label-using baselines on three of four held-out
+   tracks.** It is within ~4 points on SATA and ECtHR and level on NLU++. Its label-free macro (51.4) about equals what
+   labels gave at 4B (52.2). A zero-training multi-answer recipe exists:
+   - one yes/no question per option, with all options listed;
+   - keep the options above 0.5;
+   - use the largest model affordable.
+2. **Asking "how many" in one pass is the worst method,** even at 27B. The count should come from summing per-option
+   judgements, never from a counting question.
+3. **What remains is the same two gaps as before.**
+   - UNFAIR-ToS's labelling convention: 88 % "none"; −22 vs B.
+   - SATA's under-counting: 29 without labels vs 60 with the true count.
+4. **Stating the bar in words moves the count but does not pin it down.** "Partly relevant" means less to the model
+   than to the annotators. The stated-bar interface failed its test.
+5. **Letting the model write its answer helps only on SATA** (+5.5). One-pass readouts are not the main bottleneck.
+
+**Pre-registered consequences.**
+- C2 failed: write up the recipe with that limit.
+- C3 failed: stated bars do not work without training, and closing is the default.
+- The written-answer reference met its trigger on SATA, barely and on one track: a trained readout is the one
+  training direction left.
+
+Whether to take it, or to close with the write-up, is decided next (see the discussion after this run).

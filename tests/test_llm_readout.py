@@ -98,3 +98,23 @@ def test_write_question_runs_and_parses_into_the_record():
     assert isinstance(rec["write_raw"], str) and len(rec["pick"]) == 5
     assert ("write" in rec) == (answers["write"]["indices"] is not None)   # a random model writes junk: usually missing
     assert c.mass_summary()["write"]["n"] == 1
+
+
+class SpacedTokenizer(ByteTokenizer):
+    """Byte tokens plus one token (id 256 + j) for each letter with a leading space."""
+
+    def encode(self, text, add_special_tokens=False):
+        if len(text) == 2 and text[0] == " " and text[1] in LETTERS:
+            return [256 + LETTERS.index(text[1])]
+        return super().encode(text)
+
+
+def test_letters_with_a_leading_space_count_as_the_letter():
+    it = item(4)   # 4 options: " A".." D" are ids 256-259, inside the tiny model's vocabulary of 260
+    q = build_questions(it, ["pick"])["pick"]
+    c = LLMClient(LM if LM is not None else tiny_lm(), SpacedTokenizer(), "tiny")
+    row = torch.full((260,), -30.0)
+    row[ord("A")], row[256 + 1] = 0.0, 1.0   # "A" and " B"
+    p = torch.softmax(c._letter_logits(row, 3), 0)
+    assert p[1] > p[0] > p[2]
+    assert c.decide(it.state, {"pick": q})["answers"]["pick"]["probabilities"]

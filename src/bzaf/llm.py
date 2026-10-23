@@ -3,7 +3,8 @@
 Each question becomes one chat prompt, as in SemIf and Geuter et al. 2026 ("Releasing the Inner Jev", Appendix A): a
 fixed system message, a JSON user message {"evidence", "criterion", "options": [{"letter", "description"}]}, and the
 model's own chat template with thinking off, so the next token is the answer letter. The probability of each listed
-option is the softmax of the next-token logits over the option letters (A-Z, then a-z above 26 options; at most 52).
+option is the softmax of the next-token logits over the option letters (A-Z, then a-z above 26 options; at most 52),
+each letter counted with or without a leading space.
 No temperature: these readouts are scored as they come out of the model.
 
 The client answers like a decision server (`DecisionClient.decide`), so `bzaf readout`, `bzaf bench` and all the
@@ -108,6 +109,10 @@ class LLMClient:
         if any(len(i) != 1 for i in ids):
             raise ValueError("every option letter must be one token for this readout")
         self.letter_ids = torch.tensor([i[0] for i in ids], device=self.device)
+        # the same letter with a leading space (" B"), where the tokenizer has it as one token: E04a's 27B answered some
+        # UNFAIR-ToS yes/no questions that way, and ignoring it tilted those answers towards the other letter
+        spaced = [tokenizer.encode(" " + L, add_special_tokens=False) for L in LETTERS]
+        self.spaced_ids = torch.tensor([i[0] if len(i) == 1 else -1 for i in spaced], device=self.device)
         self.mass: dict[str, list[float]] = defaultdict(list)   # probability on the listed letters, per question group
         self.written: list[bool] = []                            # whether each written answer parsed
         self.low_mass: list[dict] = []                           # examples of questions answered mostly off the letters
@@ -154,7 +159,7 @@ class LLMClient:
                 continue
             names, _ = options_of(q)
             row = logits[key].float()
-            letters = row[self.letter_ids[: len(names)]]
+            letters = self._letter_logits(row, len(names))
             label = key if _group(key) == "rest" else _group(key)
             mass = float((torch.logsumexp(letters, 0) - torch.logsumexp(row, 0)).exp())
             self.mass[label].append(mass)
@@ -175,6 +180,12 @@ class LLMClient:
         if self.written:
             out["write"] = {"n": len(self.written), "parsed": sum(self.written) / len(self.written)}
         return out
+
+    def _letter_logits(self, row: torch.Tensor, k: int) -> torch.Tensor:
+        """Log-probability (unnormalised) of each of the first k letters, with or without a leading space."""
+        plain, spaced = row[self.letter_ids[:k]], self.spaced_ids[:k]
+        alt = torch.where(spaced >= 0, row[spaced.clamp(min=0)], torch.full_like(plain, float("-inf")))
+        return torch.logaddexp(plain, alt)
 
     def mass_counts(self) -> dict[str, int]:
         return {g: len(v) for g, v in self.mass.items()}
