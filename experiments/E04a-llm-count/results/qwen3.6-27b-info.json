@@ -1,0 +1,437 @@
+{
+  "model": "Qwen/Qwen3.6-27B",
+  "revision": "main",
+  "name": "qwen3.6-27b",
+  "model_type": "qwen3_5_text",
+  "architectures": null,
+  "params_b": 26.9,
+  "dtype": "torch.bfloat16",
+  "self_check_max_diff": 0.030967116355895996,
+  "letter_mass_by_track": {
+    "sata": {
+      "count": {
+        "n": 1650,
+        "mean": 0.9986005525516741,
+        "min": 0.9896870851516724
+      },
+      "noulctx": {
+        "n": 15517,
+        "mean": 0.9991744425045258,
+        "min": 0.9622025489807129
+      },
+      "pick": {
+        "n": 1650,
+        "mean": 0.9968215929739404,
+        "min": 0.9051080942153931
+      }
+    },
+    "nlupp": {
+      "count": {
+        "n": 600,
+        "mean": 0.9999227991700173,
+        "min": 0.9998169541358948
+      },
+      "noulctx": {
+        "n": 27184,
+        "mean": 0.9980229663609441,
+        "min": 0.9566723108291626
+      },
+      "pick": {
+        "n": 600,
+        "mean": 0.9992191841204962,
+        "min": 0.9771387577056885
+      }
+    },
+    "ecthr": {
+      "count": {
+        "n": 300,
+        "mean": 0.9972560220956802,
+        "min": 0.9665951132774353
+      },
+      "noulctx": {
+        "n": 3000,
+        "mean": 0.991262246966362,
+        "min": 0.5547259449958801
+      },
+      "pick": {
+        "n": 300,
+        "mean": 0.9977818777163824,
+        "min": 0.9825229644775391
+      }
+    },
+    "unfair_tos": {
+      "count": {
+        "n": 800,
+        "mean": 0.9902171460539102,
+        "min": 0.8725466132164001
+      },
+      "noulctx": {
+        "n": 6400,
+        "mean": 0.9544963888882194,
+        "min": 0.08507095277309418
+      },
+      "pick": {
+        "n": 800,
+        "mean": 0.9892551176995039,
+        "min": 0.9235444068908691
+      }
+    },
+    "synthetic": {
+      "count": {
+        "n": 300,
+        "mean": 0.9987817452351252,
+        "min": 0.9956986904144287
+      },
+      "noulctx": {
+        "n": 2099,
+        "mean": 0.9995085719711955,
+        "min": 0.98678058385849
+      },
+      "pick": {
+        "n": 300,
+        "mean": 0.9917886761824289,
+        "min": 0.5510119199752808
+      }
+    }
+  },
+  "bar_wands_sha256": "fe40930d291e4212a538cce804fbf2f52cb82dd6fbf520e14b71eb1c0b2f54df",
+  "bar_esci_sha256": "d0388420f00cb296a7afb4b27b5facdfb24a39e4620010c2528615b331d0ffb9",
+  "letter_mass": {
+    "count": {
+      "n": 4252,
+      "mean": 0.9971198323108291,
+      "min": 0.8725466132164001
+    },
+    "noulctx": {
+      "n": 59018,
+      "mean": 0.9933544200210032,
+      "min": 0.08507095277309418
+    },
+    "pick": {
+      "n": 4252,
+      "mean": 0.9948358643705398,
+      "min": 0.5510119199752808
+    },
+    "write": {
+      "n": 4250,
+      "parsed": 1.0
+    }
+  },
+  "low_mass_examples": [
+    {
+      "group": "noulctx",
+      "mass": 0.269,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.407,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.269,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.438,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.407,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.5,
+      "top_token": "B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.245,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.148,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.5,
+      "top_token": "B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.438,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.164,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.5,
+      "top_token": "B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.294,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.202,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.437,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.269,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.32,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.498,
+      "top_token": "B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.202,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.437,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.085,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.164,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.133,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.407,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.348,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.469,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.377,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.133,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.095,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.085,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.469,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.245,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.321,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.377,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.438,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.5,
+      "top_token": "B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.469,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.164,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.148,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.5,
+      "top_token": "B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.377,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.107,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.5,
+      "top_token": "B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.377,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.202,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.349,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.223,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.119,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.438,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.348,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.438,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.321,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.438,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.436,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.164,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.294,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.407,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.294,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.321,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.294,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.437,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.348,
+      "top_token": " B"
+    },
+    {
+      "group": "noulctx",
+      "mass": 0.344,
+      "top_token": " B"
+    }
+  ]
+}
